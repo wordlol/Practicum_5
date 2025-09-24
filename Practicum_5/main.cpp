@@ -103,9 +103,7 @@ void InitApp()
 //обновление приложени€
 void UpdateApp()
 {
-	BitBlt(window.dev_cont, 0, 0, window.width, window.height, window.contx, 0, 0, SRCCOPY);
-	//отрисовка заднего фона
-	ShowBitmap(window.contx, 0, 0, window.width, window.height, (HBITMAP)LoadImageA(NULL, "back.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE));
+
 
 
 
@@ -126,6 +124,14 @@ void UpdateKeyCode()
 	{
 		window.msg.message = WM_QUIT;
 	}
+}
+
+//обновление изображений
+void UpdateImage()
+{
+	BitBlt(window.dev_cont, 0, 0, window.width, window.height, window.contx, 0, 0, SRCCOPY);
+	//отрисовка заднего фона
+	ShowBitmap(window.contx, 0, 0, window.width, window.height, (HBITMAP)LoadImageA(NULL, "back.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE));
 }
 
 //вход в программу
@@ -156,6 +162,7 @@ int CALLBACK WinMain(
 			DispatchMessage(&window.msg);
 		}
 
+		UpdateImage();
 		UpdateApp();
 
 		//задержка обновлени€
