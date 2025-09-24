@@ -1,4 +1,5 @@
 #include "Windows.h"
+#include "math.h"
 
 //стурктура где храняться данные о windows окне
 struct
@@ -14,6 +15,12 @@ struct
 	//определяет размер экрана в вашей сиситеме
 	int width = GetSystemMetrics(SM_CXSCREEN), height = GetSystemMetrics(SM_CYSCREEN);
 } window;
+
+//структура с данными о координатах
+struct
+{
+	float x, y, startX, startY, dx, dy;
+} Transform;
 
 //обработка потока сообщений
 static LRESULT CALLBACK WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -103,17 +110,30 @@ void InitApp()
 //обновление приложения
 void UpdateApp()
 {
+	//центры экрана по ширине и высоте и так же стартовые точки начала рисования линий
+	Transform.startX = window.width / 2;
+	Transform.startY = window.height / 2; 
 
+	//точки куда нужно нарисовать линию
+	Transform.x = 1600;
+	Transform.y = 400;
 
+	//дельты координат
+	Transform.dx = Transform.x - Transform.startX;
+	Transform.dy = Transform.y - Transform.startY;
 
+	//определение длины гипотенузы по катитам x, y по теореме пифагора
+	int length = sqrt(pow(Transform.dx, 2) + pow(Transform.dy, 2));
 
+	for (int i = 0; i < length; i++)
+	{
+		//Вычисления шага отрисовки пикселей при помощи алгоритма Брезенхэма
+		int PixelPointX = Transform.dx * i / length + Transform.startX;
+		int PixelPointY = Transform.dy * i / length + Transform.startY;
 
-
-
-
-
-
-
+		//отрисовка пикселей на экране окна
+		SetPixel(window.contx, PixelPointX, PixelPointY, RGB(255, 0, 0));
+	}
 }
 
 //обработка команд устройств ввода
