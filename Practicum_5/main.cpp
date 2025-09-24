@@ -1,4 +1,5 @@
 #include "Windows.h"
+#include "math.h"
 
 //стурктура где хран€тьс€ данные о windows окне
 struct
@@ -14,6 +15,13 @@ struct
 	//определ€ет размер экрана в вашей сиситеме
 	int width = GetSystemMetrics(SM_CXSCREEN), height = GetSystemMetrics(SM_CYSCREEN);
 } window;
+
+//структура с данными о координатах
+struct
+{
+	float dx, dy, dz, startX, startY;
+	int width, height;
+} Transform;
 
 //обработка потока сообщений
 static LRESULT CALLBACK WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -103,16 +111,39 @@ void InitApp()
 //обновление приложени€
 void UpdateApp()
 {
+	Transform.width = 500;
+	Transform.height = 500;
 
+	Transform.startX = window.width / 2;
+	Transform.startY = window.height / 2;
 
+	float Vector3[4][3] = {
+		{-0.5, -0.5, 0},
+		{-0.5,  0.5, 0},
+		{0.5,   0.5, 0},
+		{0.5,  -0.5, 0},
+	};
 
+	//цикл открисовки по размеру количества наших вершин
+	for (int it = 0; it < sizeof(Vector3) / sizeof(Vector3[0]); it++)
+	{
+		Transform.dx = Vector3[it][0] * Transform.width;
+		Transform.dy = Vector3[it][1] * Transform.height;
+		Transform.dz = Vector3[it][2] - 0;
 
+		//определение длины гипотенузы по катитам x, y, z по теореме пифагора
+		int length = sqrt(pow(Transform.dx, 2) + pow(Transform.dy, 2) + pow(Transform.dz, 2));
 
+		for (int i = 0; i < length; i++)
+		{
+			/*¬ычислени€ шага отрисовки пикселей при помощи алгоритма Ѕрезенхэма*/
+			int PixelPointX = Transform.dx * i / length  + Transform.startX;
+			int PixelPointY = Transform.dy * i / length  + Transform.startY;
 
-
-
-
-
+			//отрисовка пикселей на экране окна
+			SetPixel(window.contx, PixelPointX, PixelPointY, RGB(255, 0, 0));
+		}
+	}
 
 }
 
