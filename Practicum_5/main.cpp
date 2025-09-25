@@ -19,8 +19,9 @@ struct
 //структура с данными о координатах
 struct
 {
-	float dx, dy, dz, startX, startY;
-	int width, height;
+	int dx, dy, dz, CenterX, CenterY;
+	int firstX, firstY, firstZ ,secondX, secondY, secondZ;
+	int width, height, depth;
 } Transform;
 
 //обработка потока сообщений
@@ -111,40 +112,62 @@ void InitApp()
 //обновление приложения
 void UpdateApp()
 {
-	Transform.width = 500;
+	//размер итоговой фигуры квадрата
+	Transform.width  = 500;
 	Transform.height = 500;
+	Transform.depth  = 0;
 
-	Transform.startX = window.width / 2;
-	Transform.startY = window.height / 2;
+	//центр экрана
+	Transform.CenterX = window.width  / 2;
+	Transform.CenterY = window.height / 2;
 
-	float Vector3[4][3] = {
-		{-0.5, -0.5, 0},
-		{-0.5,  0.5, 0},
-		{0.5,   0.5, 0},
-		{0.5,  -0.5, 0},
+	//определяем положения вершин в декартовой системе
+	int Vector3[4][3] = {
+		{-1,	-1 ,   0},
+		{-1,	 1 ,   0},
+		{ 1,	 1 ,   0},
+		{ 1,	-1 ,   0},
 	};
 
-	//цикл открисовки по размеру количества наших вершин
-	for (int it = 0; it < sizeof(Vector3) / sizeof(Vector3[0]); it++)
+	//определяем начало и конец рисования вершин
+	int Index[4][2] = {
+		{1,2},
+		{2,3},
+		{3,4},
+		{4,1}
+	};
+
+	//цикл открисовки по размеру количества наших индексов
+	for (int i = 0; i < sizeof(Index) / sizeof(Index[0]); i++)
 	{
-		Transform.dx = Vector3[it][0] * Transform.width;
-		Transform.dy = Vector3[it][1] * Transform.height;
-		Transform.dz = Vector3[it][2] - 0;
+		//начало рисования линии
+		Transform.firstX = Vector3[Index[i][0]-1][0] * Transform.width  / 2;
+		Transform.firstY = Vector3[Index[i][0]-1][1] * Transform.height / 2;
+		Transform.firstZ = Vector3[Index[i][0]-1][2] * Transform.depth  / 2;
+
+		//конец рисования линии
+		Transform.secondX = Vector3[Index[i][1]-1][0] * Transform.width  / 2;
+		Transform.secondY = Vector3[Index[i][1]-1][1] * Transform.height / 2;
+		Transform.secondZ = Vector3[Index[i][1]-1][2] * Transform.depth  / 2;
+
+		//вычисляем дельту между вершинами
+		Transform.dx = Transform.secondX - Transform.firstX;
+		Transform.dy = Transform.secondY - Transform.firstY;
+		Transform.dz = Transform.secondZ - Transform.firstZ;
 
 		//определение длины гипотенузы по катитам x, y, z по теореме пифагора
 		int length = sqrt(pow(Transform.dx, 2) + pow(Transform.dy, 2) + pow(Transform.dz, 2));
 
-		for (int i = 0; i < length; i++)
+		for (int j = 0; j < length; j++)
 		{
-			/*Вычисления шага отрисовки пикселей при помощи алгоритма Брезенхэма*/
-			int PixelPointX = Transform.dx * i / length  + Transform.startX;
-			int PixelPointY = Transform.dy * i / length  + Transform.startY;
+			//Вычисления шага отрисовки пикселей при помощи алгоритма Брезенхэма
+			int PixelPointX = Transform.dx * j / length + Transform.firstX + Transform.CenterX;
+			int PixelPointY = Transform.dy * j / length + Transform.firstY + Transform.CenterY;
 
 			//отрисовка пикселей на экране окна
 			SetPixel(window.contx, PixelPointX, PixelPointY, RGB(255, 0, 0));
 		}
 	}
-
 }
 
 //обработка команд устройств ввода
