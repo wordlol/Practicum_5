@@ -19,9 +19,11 @@ struct
 //структура с данными о координатах
 struct
 {
-	int dx, dy, dz, CenterX, CenterY;
-	int firstX, firstY, firstZ ,secondX, secondY, secondZ;
+	float dx, dy, dz, CenterX, CenterY;
+	float firstX, firstY, firstZ ,secondX, secondY, secondZ;
 	int width, height, depth;
+	float angleX, angleY, angleZ;
+	int timer;
 } Transform;
 
 //обработка потока сообщений
@@ -112,6 +114,9 @@ void InitApp()
 //обновление приложения
 void UpdateApp()
 {
+	//Таймер
+	Transform.timer++;
+
 	//размер итоговой фигуры квадрата
 	Transform.width  = 500;
 	Transform.height = 500;
@@ -121,8 +126,13 @@ void UpdateApp()
 	Transform.CenterX = window.width  / 2;
 	Transform.CenterY = window.height / 2;
 
+	//угол поворота квадрата
+	Transform.angleX = Transform.timer * (3.14 / 180.);
+	Transform.angleY = Transform.timer * (3.14 / 180.);
+	Transform.angleZ = Transform.timer * (3.14 / 180.);
+
 	//определяем положения вершин в декартовой системе
-	int Vector3[4][3] = {
+	float Vector3[4][3] = {
 		{-1,	-1 ,   0},
 		{-1,	 1 ,   0},
 		{ 1,	 1 ,   0},
@@ -136,6 +146,33 @@ void UpdateApp()
 		{3,4},
 		{4,1}
 	};
+
+	//преобразование вершин по 3 углам поворота
+	for (int i = 0; i < sizeof(Vector3)/sizeof(Vector3[0]); i++)
+	{
+		//переменные для умножения вершин на матрицу поворота
+		float x = Vector3[i][0];
+		float y = Vector3[i][1];
+		float z = Vector3[i][2];
+
+		//преобразование по X
+		Vector3[i][1] = y * cos(Transform.angleX) + z * -sin(Transform.angleX);
+		Vector3[i][2] = y * sin(Transform.angleX) + z * cos(Transform.angleX);
+		
+		x = Vector3[i][0];
+		z = Vector3[i][2];
+
+		//преобразование по Y
+		Vector3[i][0] = x *  cos(Transform.angleY) + z * sin(Transform.angleY);
+		Vector3[i][2] = x * -sin(Transform.angleY) + z * cos(Transform.angleY);
+
+		x = Vector3[i][0];
+		y = Vector3[i][1];
+
+		//преобразование по Z
+		Vector3[i][0] = x * cos(Transform.angleZ) + y * -sin(Transform.angleZ) ;
+		Vector3[i][1] = x * sin(Transform.angleZ) + y *  cos(Transform.angleZ) ;
+	}
 
 	//цикл открисовки по размеру количества наших индексов
 	for (int i = 0; i < sizeof(Index) / sizeof(Index[0]); i++)
