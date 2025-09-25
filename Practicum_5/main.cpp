@@ -24,6 +24,7 @@ struct
 	int width, height, depth;
 	float angleX, angleY, angleZ;
 	int timer;
+	int cameraDist;
 } Transform;
 
 //обработка потока сообщений
@@ -117,6 +118,9 @@ void UpdateApp()
 	//Таймер
 	Transform.timer++;
 
+	//растояние камеры до центра xyz
+	Transform.cameraDist = 4;
+
 	//размер итоговой фигуры квадрата
 	Transform.width  = 500;
 	Transform.height = 500;
@@ -127,13 +131,13 @@ void UpdateApp()
 	Transform.CenterY = window.height / 2;
 
 	//угол поворота квадрата
-	Transform.angleX = Transform.timer * (3.14 / 180.);
-	Transform.angleY = Transform.timer * (3.14 / 180.);
-	Transform.angleZ = Transform.timer * (3.14 / 180.);
+	Transform.angleX = 0 * (3.14 / 180.);
+	Transform.angleY = 0 * (3.14 / 180.);
+	Transform.angleZ = 0 * (3.14 / 180.);
 
 	//определяем положения вершин в декартовой системе
 	float Vector3[4][3] = {
-		{-1,	-1 ,   0},
+		{-1,	-1 ,   -1},
 		{-1,	 1 ,   0},
 		{ 1,	 1 ,   0},
 		{ 1,	-1 ,   0},
@@ -172,19 +176,27 @@ void UpdateApp()
 		//преобразование по Z
 		Vector3[i][0] = x * cos(Transform.angleZ) + y * -sin(Transform.angleZ) ;
 		Vector3[i][1] = x * sin(Transform.angleZ) + y *  cos(Transform.angleZ) ;
+
 	}
 
 	//цикл открисовки по размеру количества наших индексов
 	for (int i = 0; i < sizeof(Index) / sizeof(Index[0]); i++)
 	{
+		//перспективное преобразование вершин квадрата
+		float firstPerX = Vector3[Index[i][0] - 1][0] / (1 - Vector3[Index[i][0] - 1][2] / Transform.cameraDist);
+		float firstPerY = Vector3[Index[i][0] - 1][1] / (1 - Vector3[Index[i][0] - 1][2] / Transform.cameraDist);
+
+		float secondPerX = Vector3[Index[i][1] - 1][0] / (1 - Vector3[Index[i][1] - 1][2] / Transform.cameraDist);
+		float secondPerY = Vector3[Index[i][1] - 1][1] / (1 - Vector3[Index[i][1] - 1][2] / Transform.cameraDist);
+
 		//начало рисования линии
-		Transform.firstX = Vector3[Index[i][0]-1][0] * Transform.width  / 2;
-		Transform.firstY = Vector3[Index[i][0]-1][1] * Transform.height / 2;
+		Transform.firstX = firstPerX * Transform.width  / 2;
+		Transform.firstY = firstPerY * Transform.height / 2;
 		Transform.firstZ = Vector3[Index[i][0]-1][2] * Transform.depth  / 2;
 
 		//конец рисования линии
-		Transform.secondX = Vector3[Index[i][1]-1][0] * Transform.width  / 2;
-		Transform.secondY = Vector3[Index[i][1]-1][1] * Transform.height / 2;
+		Transform.secondX = secondPerX * Transform.width  / 2;
+		Transform.secondY = secondPerY * Transform.height / 2;
 		Transform.secondZ = Vector3[Index[i][1]-1][2] * Transform.depth  / 2;
 
 		//вычисляем дельту между вершинами
