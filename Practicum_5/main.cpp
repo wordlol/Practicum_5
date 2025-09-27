@@ -119,7 +119,7 @@ void UpdateApp()
 	Transform.timer++;
 
 	//растояние камеры до центра xyz
-	Transform.cameraDist = 10;
+	Transform.cameraDist = 150;
 
 	//размер итоговой фигуры квадрата
 	Transform.width  = 500;
@@ -198,13 +198,13 @@ void UpdateApp()
 	for (int i = 0; i < sizeof(Index) / sizeof(Index[0]); i++)
 	{
 		//перспективное преобразование вершин квадрата
-		float firstPerX = Vector3[Index[i][0] - 1][0] / (1 - Vector3[Index[i][0] - 1][2] / Transform.cameraDist);
-		float firstPerY = Vector3[Index[i][0] - 1][1] / (1 - Vector3[Index[i][0] - 1][2] / Transform.cameraDist);
-		float firstPerZ = Vector3[Index[i][0] - 1][2] / (1 - Vector3[Index[i][0] - 1][2] / Transform.cameraDist);
+		float firstPerX = Vector3[Index[i][0] - 1][0] * Transform.cameraDist / (Vector3[Index[i][0] - 1][2] + Transform.cameraDist);
+		float firstPerY = Vector3[Index[i][0] - 1][1] * Transform.cameraDist / (Vector3[Index[i][0] - 1][2] + Transform.cameraDist);
+		float firstPerZ = Vector3[Index[i][0] - 1][2] * Transform.cameraDist / (Vector3[Index[i][0] - 1][2] + Transform.cameraDist);
 
-		float secondPerX = Vector3[Index[i][1] - 1][0] / (1 - Vector3[Index[i][1] - 1][2] / Transform.cameraDist);
-		float secondPerY = Vector3[Index[i][1] - 1][1] / (1 - Vector3[Index[i][1] - 1][2] / Transform.cameraDist);
-		float secondPerZ = Vector3[Index[i][1] - 1][2] / (1 - Vector3[Index[i][1] - 1][2] / Transform.cameraDist);
+		float secondPerX = Vector3[Index[i][1] - 1][0] * Transform.cameraDist / (Vector3[Index[i][1] - 1][2] + Transform.cameraDist);
+		float secondPerY = Vector3[Index[i][1] - 1][1] * Transform.cameraDist / (Vector3[Index[i][1] - 1][2] + Transform.cameraDist);
+		float secondPerZ = Vector3[Index[i][1] - 1][2] * Transform.cameraDist / (Vector3[Index[i][1] - 1][2] + Transform.cameraDist);
 
 		//начало рисования линии
 		Transform.firstX = firstPerX * Transform.width  / 2;
