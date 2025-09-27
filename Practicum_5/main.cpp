@@ -201,7 +201,7 @@ void UpdateApp()
 	Transform.timer++;
 
 	//растояние камеры до центра xyz
-	Transform.cameraDist = 500;
+	Transform.cameraDist = 400;
 
 	//размер итоговой фигуры квадрата
 	Transform.width  = 100;
@@ -403,14 +403,14 @@ void UpdateApp()
 		float secondPerZ = Vector3[Index[i][1] - 1][2] * Transform.cameraDist / (Vector3[Index[i][1] - 1][2] + Transform.cameraDist);
 
 		//начало рисования линии
-		Transform.firstX = firstPerX * Transform.width / 2;
+		Transform.firstX = firstPerX * Transform.width  / 2;
 		Transform.firstY = firstPerY * Transform.height / 2;
-		Transform.firstZ = firstPerZ * Transform.depth / 2;
+		Transform.firstZ = firstPerZ * Transform.depth  / 2;
 
 		//конец рисования линии
-		Transform.secondX = secondPerX * Transform.width / 2;
+		Transform.secondX = secondPerX * Transform.width  / 2;
 		Transform.secondY = secondPerY * Transform.height / 2;
-		Transform.secondZ = secondPerZ * Transform.depth / 2;
+		Transform.secondZ = secondPerZ * Transform.depth  / 2;
 
 		//вычисляем дельту между вершинами
 		Transform.dx = Transform.secondX - Transform.firstX;
