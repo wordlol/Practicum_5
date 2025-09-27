@@ -103,6 +103,88 @@ void ShowBitmap(HDC hDC, int x, int y, int x1, int y1, HBITMAP hBitmapBall)
 	DeleteDC(hMemDC);
 }
 
+//зиливка полигонов одни цветом
+void DrawTriangle(float X1, float X2, float X3 , float Y1, float Y2, float Y3, int Color)
+{
+	int R = 0;
+	int G = 0;
+	int B = 0;
+	//выборка цвета
+	if (Color == 1)
+	{R = 255; G = 0; B = 0;}
+	if (Color == 2)
+	{R = 0; G = 255; B = 0;}	
+	if (Color == 3)
+	{R = 0; G = 0; B = 255;}
+	if (Color == 4)
+	{R = 255; G = 255; B = 0;}
+	if (Color == 5)
+	{R = 255; G = 0; B = 255;}
+	if (Color == 6)
+	{R = 0; G = 255; B = 255;}
+
+	int AY = Y1 * Transform.height / 2 + Transform.CenterY;
+	int BY = Y2 * Transform.height / 2 + Transform.CenterY;
+	int CY = Y3 * Transform.height / 2 + Transform.CenterY;
+
+	int AX = X1 * Transform.width  / 2 + Transform.CenterX;
+	int BX = X2 * Transform.width  / 2 + Transform.CenterX;
+	int CX = X3 * Transform.width  / 2 + Transform.CenterX;
+
+	int temp;
+	//сортировка 3 вершин по minY и maxY
+	if (AY > BY)
+	{
+		temp = AY;
+		AY = BY;
+		BY = temp;
+	}
+	if (AY > CY)
+	{
+		temp = AY;
+		AY = CY;
+		CY = temp;
+	}
+	if (BY > CY)
+	{
+		temp = BY;
+		BY = CY;
+		CY = temp;
+	}
+
+	//алгоритм заливки триугольника однотонным цветом
+	for (int i = AY; i < CY; i++)
+	{
+		int x1 = AX + (i - AY) * (CX - AX) / (CY - AY);
+		int x2;
+		if (i < BY)
+		{
+			x2 = AX + (i - AY) * (BX - AX) / (BY - AY);
+		}
+		else
+		{
+			if (CY == BY)
+			{
+				x2 = BX;
+			}
+			else
+			{
+				x2 = BX + (i - BY) * (CX - BX) / (CY - BY);
+			}
+		}
+		if (x1 > x2)
+		{
+			temp = x1;
+			x1 = x2;
+			x2 = temp;
+		}
+		for (int j = x1; j < x2; j++)
+		{
+			SetPixel(window.contx, j, i, RGB(R, G, B));
+		}
+	}
+}
+
 //загрузка модулей приложения
 void InitApp()
 {
@@ -119,7 +201,7 @@ void UpdateApp()
 	Transform.timer++;
 
 	//растояние камеры до центра xyz
-	Transform.cameraDist = 10;
+	Transform.cameraDist = 500;
 
 	//размер итоговой фигуры квадрата
 	Transform.width  = 100;
@@ -137,48 +219,95 @@ void UpdateApp()
 
 	//определяем положения вершин в декартовой системе
 	float Vector3[8][3] = {
-		{-1,	-1,   0},
-		{-1,	 1,   0},
-		{ 1,	 1,   0},
-		{ 1,	-1,   0},
+		{-1,	-1,   1},
+		{-1,	 1,   1},
+		{ 1,	 1,   1},
+		{ 1,	-1,   1},
 
-		{-1,	-1,  -2},
-		{-1,	 1,  -2},
-		{ 1,	 1,  -2},
-		{ 1,	-1,  -2},
+		{-1,	-1,  -1},
+		{-1,	 1,  -1},
+		{ 1,	 1,  -1},
+		{ 1,	-1,  -1},
 	};
 
 	//определяем начало и конец рисования вершин
-	int Index[6][2] = {
+	int Index[36][2] = {
 		{1,2}, 
 		{2,3}, 
 		{3,1}, 
 
-		/*{1,3},
+		{1,3},
 		{3,4},
-		{4,1},*/
+		{4,1},
 
-		/*{5,6}, {5,7},
-		{6,7}, {7,8},
-		{7,5}, {8,5},
+		{5,6}, 
+		{6,7}, 
+		{7,5}, 
 
-		{1,5}, {1,6},
-		{5,6}, {6,2},
-		{6,1}, {2,1},
+		{5,7},
+		{7,8},
+		{8,5},
 
-		{2,6}, {2,7},
-		{6,7}, {7,3},
-		{7,2}, {3,2},
+		{1,5}, 
+		{5,6}, 
+		{6,1}, 
 
-		{3,7}, {3,8},
-		{7,8}, {8,4},
-		{8,3}, {4,3},
+		{1,6},
+		{6,2},
+		{2,1},
 
-		{4,8}, {4,5},
-		{8,5}, {5,1},
-		{5,4}, {1,4},*/
+		{2,6}, 
+		{6,7}, 
+		{7,2}, 
+
+		{2,7},
+		{7,3},
+		{3,2},
+
+		{3,7}, 
+		{7,8}, 
+		{8,3}, 
+
+		{3,8},
+		{8,4},
+		{4,3},
+
+		{4,8}, 
+		{8,5}, 
+		{5,4}, 
+
+		{4,5},
+		{5,1},
+		{1,4},
 	};
 
+	//триугольники + цвет + z-buffer
+ 	float Poligon[12][5] =
+	{
+		//front //red
+		{1,2,3 ,1 ,0},
+		{1,3,4 ,1 ,0},
+
+		//back //green
+		{5,6,7 ,2 ,0},
+		{5,7,8 ,2 ,0},
+		
+		//left //blue
+		{1,2,6 ,3 ,0},
+		{1,6,5 ,3 ,0},
+				
+		//right //red green
+		{8,7,3 ,4 ,0},
+		{8,3,4 ,4 ,0},
+				  
+		//top //red blue
+		{2,6,7 ,5 ,0},
+		{2,7,3 ,5 ,0},
+		
+		//bottom //green blue
+		{5,1,4 ,6 ,0},
+		{5,4,8 ,6 ,0},
+	};
 
 	//преобразование вершин по 3 углам поворота
 	for (int i = 0; i < sizeof(Vector3)/sizeof(Vector3[0]); i++)
@@ -208,152 +337,90 @@ void UpdateApp()
 
 	}
 
-	float printx1 = Vector3[1 - 1][0] / (1 - Vector3[1 - 1][2] / Transform.cameraDist);
-	float printx2 = Vector3[2 - 1][0] / (1 - Vector3[2 - 1][2] / Transform.cameraDist);
-	float printx3 = Vector3[3 - 1][0] / (1 - Vector3[3 - 1][2] / Transform.cameraDist);
+	//вычисление среднего z для z-buffer
+	for (int i = 0; i < sizeof(Poligon) / sizeof(Poligon[0]); i++)
+	{
+		float Z1 = Vector3[(int)Poligon[i][0] - 1][2];
+		float Z2 = Vector3[(int)Poligon[i][1] - 1][2];
+		float Z3 = Vector3[(int)Poligon[i][2] - 1][2];
 
-	float printy1 = Vector3[1 - 1][1] / (1 - Vector3[1 - 1][2] / Transform.cameraDist);
-	float printy2 = Vector3[2 - 1][1] / (1 - Vector3[2 - 1][2] / Transform.cameraDist);
-	float printy3 = Vector3[3 - 1][1] / (1 - Vector3[3 - 1][2] / Transform.cameraDist);
+		float Zmidle = (float)(Z1 + Z2 + Z3) / (float)3;
+		Poligon[i][4] = Zmidle;
+	}
 
-	float Ay; //высокая вершина
-	float By; //средняя 
-	float Cy; //нижняя
+	//пузырьковая сортировка полигонов z-buffer
+	bool sort = false;
+	while (!sort)
+	{
+		sort = true;
+		for (int i = 1; i < sizeof(Poligon) / sizeof(Poligon[0]); i++)
+		{
+			float prev = Poligon[i - 1][4];
+			float current = Poligon[i][4];
 
-	float Ax;
-	float Bx;
-	float Cx;
+			if (prev > current)
+			{
+				float temp[5];
+				for (int j = 0; j < sizeof(Poligon[0]) / sizeof(Poligon[0][0]); j++)
+				{
+					temp[j] = Poligon[i - 1][j];
+					Poligon[i - 1][j] = Poligon[i][j];
+					Poligon[i][j] = temp[j];
+					sort = false;
+				}
+			}
+		}
+	}
 
+	//цикл заливки цветом по массиву полигонов
+	for (int i = 0; i < sizeof(Poligon) / sizeof(Poligon[0]); i++)
+	{
+		float Z1 = Vector3[(int)Poligon[i][0] - 1][2];
+		float Z2 = Vector3[(int)Poligon[i][1] - 1][2];
+		float Z3 = Vector3[(int)Poligon[i][2] - 1][2];
+
+		float X1 = Vector3[(int)Poligon[i][0] - 1][0] * Transform.cameraDist / (Z1 + Transform.cameraDist);
+		float X2 = Vector3[(int)Poligon[i][1] - 1][0] * Transform.cameraDist / (Z2 + Transform.cameraDist);
+		float X3 = Vector3[(int)Poligon[i][2] - 1][0] * Transform.cameraDist / (Z3 + Transform.cameraDist);
+													 
+		float Y1 = Vector3[(int)Poligon[i][0] - 1][1] * Transform.cameraDist / (Z1 + Transform.cameraDist);
+		float Y2 = Vector3[(int)Poligon[i][1] - 1][1] * Transform.cameraDist / (Z2 + Transform.cameraDist);
+		float Y3 = Vector3[(int)Poligon[i][2] - 1][1] * Transform.cameraDist / (Z3 + Transform.cameraDist);
+		
+		DrawTriangle(X1, X2, X3, Y1, Y2, Y3, Poligon[i][3]);
+	}
 
 	//цикл открисовки по размеру количества наших индексов
 	for (int i = 0; i < sizeof(Index) / sizeof(Index[0]); i++)
 	{
 		//перспективное преобразование вершин квадрата
-		float firstPerX  = Vector3[Index[i][0] - 1][0] / (1 - Vector3[Index[i][0] - 1][2] / Transform.cameraDist);
-		float firstPerY  = Vector3[Index[i][0] - 1][1] / (1 - Vector3[Index[i][0] - 1][2] / Transform.cameraDist);
-		float firstPerZ  = Vector3[Index[i][0] - 1][2] / (1 - Vector3[Index[i][0] - 1][2] / Transform.cameraDist);
+		float firstPerX  = Vector3[Index[i][0] - 1][0] * Transform.cameraDist / (Vector3[Index[i][0] - 1][2] + Transform.cameraDist);
+		float firstPerY  = Vector3[Index[i][0] - 1][1] * Transform.cameraDist / (Vector3[Index[i][0] - 1][2] + Transform.cameraDist);
+		float firstPerZ  = Vector3[Index[i][0] - 1][2] * Transform.cameraDist / (Vector3[Index[i][0] - 1][2] + Transform.cameraDist);
 
-		float secondPerX = Vector3[Index[i][1] - 1][0] / (1 - Vector3[Index[i][1] - 1][2] / Transform.cameraDist);
-		float secondPerY = Vector3[Index[i][1] - 1][1] / (1 - Vector3[Index[i][1] - 1][2] / Transform.cameraDist);
-		float secondPerZ = Vector3[Index[i][1] - 1][2] / (1 - Vector3[Index[i][1] - 1][2] / Transform.cameraDist);
+		float secondPerX = Vector3[Index[i][1] - 1][0] * Transform.cameraDist / (Vector3[Index[i][1] - 1][2] + Transform.cameraDist);
+		float secondPerY = Vector3[Index[i][1] - 1][1] * Transform.cameraDist / (Vector3[Index[i][1] - 1][2] + Transform.cameraDist);
+		float secondPerZ = Vector3[Index[i][1] - 1][2] * Transform.cameraDist / (Vector3[Index[i][1] - 1][2] + Transform.cameraDist);
 
 		//начало рисования линии
-		Transform.firstX = firstPerX * Transform.width  / 2;
+		Transform.firstX = firstPerX * Transform.width / 2;
 		Transform.firstY = firstPerY * Transform.height / 2;
-		Transform.firstZ = firstPerZ * Transform.depth  / 2;
+		Transform.firstZ = firstPerZ * Transform.depth / 2;
 
 		//конец рисования линии
-		Transform.secondX = secondPerX * Transform.width  / 2;
+		Transform.secondX = secondPerX * Transform.width / 2;
 		Transform.secondY = secondPerY * Transform.height / 2;
-		Transform.secondZ = secondPerZ * Transform.depth  / 2;
+		Transform.secondZ = secondPerZ * Transform.depth / 2;
 
 		//вычисляем дельту между вершинами
 		Transform.dx = Transform.secondX - Transform.firstX;
 		Transform.dy = Transform.secondY - Transform.firstY;
 		Transform.dz = Transform.secondZ - Transform.firstZ;
 
-		//заливка цветом
-
-		//сортировка 3 вершин
-		if (printy1 >= printy2)
-		{
-			if (printy1 >= printy3)
-			{
-				Ay = printy2;
-				Ax = printx2;
-
-				By = printy3;
-				Bx = printx3;
-
-				Cy = printy1;
-				Cx = printx1;
-			}
-			else
-			{
-				Ay = printy2;
-				Ax = printx2;
-
-				By = printy1;
-				Bx = printx1;
-
-				Cy = printy3;
-				Cx = printx3;
-			}
-		}
-		else
-		{
-			if (printy2 >= printy3)
-			{
-				Ay = printy1;
-				Ax = printx1;
-
-				By = printy3;
-				Bx = printx3;
-
-				Cy = printy2;
-				Cx = printx2;
-			}
-			else
-			{
-				Ay = printy1;
-				Ax = printx1;
-
-				By = printy2;
-				Bx = printx2;
-
-				Cy = printy3;
-				Cx = printx3;
-			}
-		}
-
-		Ax *= Transform.width / 2;
-		Ay *= Transform.height / 2;
-
-		Bx *= Transform.width / 2;
-		By *= Transform.height / 2;
-
-		Cx *= Transform.width / 2;
-		Cy *= Transform.height / 2;
-
-
-
-
-		/*for (int sy = Ay; sy <= Cy; sy++) 
-		{
-			int x1 = Ax + (sy - Ay) * (Cx - Ax) / (Cy - Ay);
-			int x2;
-
-			if (sy < By)
-			{
-				x2 = Ax + (sy - Ay) * (Bx - Ax) / (By - Ay);
-			}
-			else 
-			{
-				if (Cy == By)
-				x2 = Bx;
-				else
-				x2 = Bx + (sy - By) * (Cx - Bx) / (Cy - By);
-			}
-			if (x1 > x2) 
-			{ 
-				int tmp = x1; 
-				x1 = x2; 
-				x2 = tmp;
-			};
-
-			int dx12 = x2 - x1;
-			int length2 = sqrt(pow(dx12, 2) + pow(Transform.dy, 2) + pow(Transform.dz, 2));
-			for (int i = 0; i < length2; i++)
-			{
-				int PixelPointX = dx12 * i / length2 + Transform.firstX + Transform.CenterX;
-				int PixelPointY = Transform.dy * i / length2 + Transform.firstY + Transform.CenterY;
-				SetPixel(window.contx, PixelPointX, PixelPointY, RGB(255, 0, 0));
-			}
-		}*/
-
 		//определение длины гипотенузы по катитам x, y, z по теореме пифагора
 		int length = sqrt(pow(Transform.dx, 2) + pow(Transform.dy, 2) + pow(Transform.dz, 2));
 
+		//отрисвовка линий
 		for (int j = 0; j < length; j++)
 		{
 			//Вычисления шага отрисовки пикселей при помощи алгоритма Брезенхэма
@@ -363,13 +430,7 @@ void UpdateApp()
 			//отрисовка пикселей на экране окна
 			SetPixel(window.contx, PixelPointX, PixelPointY, RGB(255, 255, 255));
 		}
-
 	}
-
-	
-
-
-
 }
 
 //обработка команд устройств ввода
@@ -421,8 +482,6 @@ int CALLBACK WinMain(
 		UpdateImage();
 		UpdateApp();
 
-		//задержка обновления
-		Sleep(3);
 	}
 	return 0;
 }
