@@ -1,7 +1,8 @@
 #include "Windows.h"
 #include "math.h"
 
-//стурктура где храняться данные о windows окне
+/** стурктура где храняться данные о windows окне
+*/
 struct
 {
 	//дескрипторы, контейнеры и буфферы для windows
@@ -46,7 +47,8 @@ struct
 	};
 } Transform;
 
-//обработка потока сообщений
+/** обработка потока сообщений
+*/
 static LRESULT CALLBACK WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (msg)
@@ -59,7 +61,8 @@ static LRESULT CALLBACK WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lP
 	}
 };
 
-//создания windows окна
+/** создания windows окна
+*/
 void InitWindow()
 {
 	//имя класса окна
@@ -102,7 +105,8 @@ void InitWindow()
 	ShowWindow(window.hWnd, SW_SHOW);
 }
 
-//отрисовка изображений .bmp
+/** отрисовка изображений .bmp
+*/
 void ShowBitmap(HDC hDC, int x, int y, int x1, int y1, HBITMAP hBitmapBall)
 {
 	HBITMAP hbm, hOldbm;
@@ -122,7 +126,8 @@ void ShowBitmap(HDC hDC, int x, int y, int x1, int y1, HBITMAP hBitmapBall)
 	DeleteDC(hMemDC);
 }
 
-//загрузка модулей приложения
+/** загрузка модулей приложения
+*/
 void InitApp()
 {
 	//создание и иниализация контекста устройсва и девайс устройства
@@ -130,6 +135,7 @@ void InitApp()
 	window.contx = CreateCompatibleDC(window.dev_cont);
 	SelectObject(window.contx, CreateCompatibleBitmap(window.dev_cont, window.width, window.height));
 }
+
 
 /** Функция для загрузки данных для построения линии
 */
@@ -214,7 +220,9 @@ void UpdateApp()
 	DrawSquare();
 }
 
-//обработка команд устройств ввода
+
+/** обработка команд устройств ввода
+*/
 void UpdateKeyCode()
 {
 	//выход из приложения на ESC
@@ -224,7 +232,8 @@ void UpdateKeyCode()
 	}
 }
 
-//обновление изображений
+/** обновление изображений
+*/
 void UpdateImage()
 {
 	BitBlt(window.dev_cont, 0, 0, window.width, window.height, window.contx, 0, 0, SRCCOPY);
@@ -232,7 +241,8 @@ void UpdateImage()
 	ShowBitmap(window.contx, 0, 0, window.width, window.height, (HBITMAP)LoadImageA(NULL, "back.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE));
 }
 
-//вход в программу
+/** вход в программу
+*/
 int CALLBACK WinMain(
 	HINSTANCE hInstance,
 	HINSTANCE hPrevInstance,
@@ -242,10 +252,10 @@ int CALLBACK WinMain(
 	InitWindow();
 	InitApp();
 
-	//основной цикл обновления приложения
+	/// основной цикл обновления приложения
 	while (window.gbool)
 	{
-		//обработка соощений для окна
+		/// обработка соощений для окна
 		while (PeekMessage(&window.msg, NULL, 0, 0, PM_REMOVE))
 		{
 			UpdateKeyCode();
@@ -263,7 +273,7 @@ int CALLBACK WinMain(
 		UpdateImage();
 		UpdateApp();
 
-		//задержка обновления
+		/// задержка обновления
 		Sleep(16);
 	}
 	return 0;
