@@ -16,6 +16,7 @@ struct
 	int width = GetSystemMetrics(SM_CXSCREEN), height = GetSystemMetrics(SM_CYSCREEN);
 } window;
 
+/// структура хранения данных о расположении объекта
 struct
 {
 	int x0, y0, z0, x1, y1, z1;
