@@ -16,12 +16,32 @@ struct
 	int width = GetSystemMetrics(SM_CXSCREEN), height = GetSystemMetrics(SM_CYSCREEN);
 } window;
 
-//структура с данными о координатах
 struct
 {
-	int dx, dy, dz, CenterX, CenterY;
-	int firstX, firstY, firstZ ,secondX, secondY, secondZ;
-	int width, height, depth;
+	int x0, y0, z0, x1, y1, z1;
+	int	dx, dy, dz;
+	int	signX, signY, signZ;
+	int	direction;
+	int	CenterX = window.width  / 2;
+	int	CenterY = window.height / 2;
+
+	/// точки вертексов квадрата
+	int Vertex[4][3] = 
+	{
+				{-1,	-1 ,   0},
+				{-1,	 1 ,   0},
+				{ 1,	 1 ,   0},
+				{ 1,	-1 ,   0},
+	};
+
+	/// последовательность отрисовки квадрата
+	int Index[4][2] = 
+	{
+				{1,2},
+				{2,3},
+				{3,4},
+				{4,1}
+	};
 } Transform;
 
 //обработка потока сообщений
@@ -109,29 +129,32 @@ void InitApp()
 	SelectObject(window.contx, CreateCompatibleBitmap(window.dev_cont, window.width, window.height));
 }
 
-
 /** Функция для загрузки данных для построения линии
 */
-void InitTransformData(int x0, int y0, int x1, int y1)
+void InitTransformData(int x0, int y0, int x1, int y1, int width, int height)
 {
-	Transform.x0 = x0;
-	Transform.y0 = y0;
-	Transform.x1 = x1;
-	Transform.y1 = y1;
+	/// выстовляем квадрат в центр экрана и так же задаем ширину и высоту
+	Transform.x0 = x0 * width  / 2 + Transform.CenterX;
+	Transform.y0 = y0 * height / 2 + Transform.CenterY;
+	Transform.x1 = x1 * width  / 2 + Transform.CenterX;
+	Transform.y1 = y1 * height / 2 + Transform.CenterY;
 
-	Transform.dx = abs(x1 - x0);
-	Transform.dy = abs(y1 - y0);
+	/// вычисляем дельты
+	Transform.dx = abs(Transform.x1 - Transform.x0);
+	Transform.dy = abs(Transform.y1 - Transform.y0);
 
-	if (x0 < x1)
+	/// опеределяем начало отрисовки
+	if (Transform.x0 < Transform.x1)
 		Transform.signX = 1;
 	else
 		Transform.signX = -1;
 
-	if (y0 < y1)
+	if (Transform.y0 < Transform.y1)
 		Transform.signY = 1;
 	else
 		Transform.signY = -1;
 
+	/// опеределяем направление рисования
 	Transform.direction = Transform.dx - Transform.dy;
 }
 
@@ -154,8 +177,31 @@ void DrawLine()
 			Transform.y0 += Transform.signY; /// применения сдвига пикселя на y
 		}
 
-		if (Transform.x0 == Transform.x1 || Transform.y0 == Transform.y1) /// выход из цикла
+		if (Transform.x0 == Transform.x1 && Transform.y0 == Transform.y1) /// выход из цикла
 			break;
+	}
+}
+
+/** Алгоритм отрисовки квадрата
+*/
+void DrawSquare()
+{
+	for (int i = 0; i < sizeof(Transform.Index)/sizeof(Transform.Index[0]); i++)
+	{
+		/// получаем индексы из буффера
+		int Point0 = Transform.Index[i][0];
+		int Point1 = Transform.Index[i][1];
+
+		/// загружаем точки вертексов
+		InitTransformData(
+			Transform.Vertex[Point0 - 1][0],
+			Transform.Vertex[Point0 - 1][1],
+			Transform.Vertex[Point1 - 1][0],
+			Transform.Vertex[Point1 - 1][1],
+			500, 500);
+
+		/// отрисовываем грани квадрата по точкам
+		DrawLine();
 	}
 }
 
@@ -163,70 +209,7 @@ void DrawLine()
 */
 void UpdateApp()
 {
-	InitTransformData(100, 300, 1900, 200);
-	DrawLine();
-}
-
-
-//обновление приложения
-void UpdateApp()
-{
-	//размер итоговой фигуры квадрата
-	Transform.width  = 500;
-	Transform.height = 500;
-	Transform.depth  = 0;
-
-	//центр экрана
-	Transform.CenterX = window.width  / 2;
-	Transform.CenterY = window.height / 2;
-
-	//определяем положения вершин в декартовой системе
-	int Vector3[4][3] = {
-		{-1,	-1 ,   0},
-		{-1,	 1 ,   0},
-		{ 1,	 1 ,   0},
-		{ 1,	-1 ,   0},
-	};
-
-	//определяем начало и конец рисования вершин
-	int Index[4][2] = {
-		{1,2},
-		{2,3},
-		{3,4},
-		{4,1}
-	};
-
-	//цикл открисовки по размеру количества наших индексов
-	for (int i = 0; i < sizeof(Index) / sizeof(Index[0]); i++)
-	{
-		//начало рисования линии
-		Transform.firstX = Vector3[Index[i][0]-1][0] * Transform.width  / 2;
-		Transform.firstY = Vector3[Index[i][0]-1][1] * Transform.height / 2;
-		Transform.firstZ = Vector3[Index[i][0]-1][2] * Transform.depth  / 2;
-
-		//конец рисования линии
-		Transform.secondX = Vector3[Index[i][1]-1][0] * Transform.width  / 2;
-		Transform.secondY = Vector3[Index[i][1]-1][1] * Transform.height / 2;
-		Transform.secondZ = Vector3[Index[i][1]-1][2] * Transform.depth  / 2;
-
-		//вычисляем дельту между вершинами
-		Transform.dx = Transform.secondX - Transform.firstX;
-		Transform.dy = Transform.secondY - Transform.firstY;
-		Transform.dz = Transform.secondZ - Transform.firstZ;
-
-		//определение длины гипотенузы по катитам x, y, z по теореме пифагора
-		int length = sqrt(pow(Transform.dx, 2) + pow(Transform.dy, 2) + pow(Transform.dz, 2));
-
-		for (int j = 0; j < length; j++)
-		{
-			//Вычисления шага отрисовки пикселей при помощи алгоритма Брезенхэма
-			int PixelPointX = Transform.dx * j / length + Transform.firstX + Transform.CenterX;
-			int PixelPointY = Transform.dy * j / length + Transform.firstY + Transform.CenterY;
-
-			//отрисовка пикселей на экране окна
-			SetPixel(window.contx, PixelPointX, PixelPointY, RGB(255, 0, 0));
-		}
-	}
+	DrawSquare();
 }
 
 //обработка команд устройств ввода
