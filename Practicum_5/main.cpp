@@ -20,7 +20,11 @@ struct
 */
 struct
 {
-	int dx, 
+	int x0,
+		y0,
+		x1,
+		y1,
+		dx, 
 		dy,
 		signX,
 		signY,
@@ -108,11 +112,16 @@ void InitApp()
 	SelectObject(window.contx, CreateCompatibleBitmap(window.dev_cont, window.width, window.height));
 }
 
-/** Функция отрисвоки линии на экране окна по Брезенхэйму
+
+/** Функция для загрузки данных для построения линии
 */
-void DrawLine(int x0, int y0, int x1, int y1)
+void InitTransformData(int x0, int y0, int x1, int y1)
 {
-	/// Вычисление дельт
+	Transform.x0 = x0;
+	Transform.y0 = y0;
+	Transform.x1 = x1;
+	Transform.y1 = y1;
+
 	Transform.dx = abs(x1 - x0);
 	Transform.dy = abs(y1 - y0);
 
@@ -127,23 +136,28 @@ void DrawLine(int x0, int y0, int x1, int y1)
 		Transform.signY = -1;
 
 	Transform.direction = Transform.dx - Transform.dy;
+}
 
+/** Функция отрисвоки линии на экране окна по Брезенхэйму
+*/
+void DrawLine()
+{
 	while (true)
 	{
-		SetPixel(window.contx, x0, y0, RGB(255, 0, 0));
+		SetPixel(window.contx, Transform.x0, Transform.y0, RGB(255, 0, 0)); /// отрисовки линии
 
 		if (Transform.direction > -Transform.dy)
 		{
-			Transform.direction -= Transform.dy;
-			x0 += Transform.signX;
+			Transform.direction -= Transform.dy; /// изменение направления по y
+			Transform.x0 += Transform.signX; /// применения сдвига пикселя на x
 		}
 		if (Transform.direction < Transform.dx)
 		{
-			Transform.direction += Transform.dx;
-			y0 += Transform.signY;
+			Transform.direction += Transform.dx; /// изменение направления по x
+			Transform.y0 += Transform.signY; /// применения сдвига пикселя на y
 		}
 
-		if (x0 == x1 || y0 == y1)
+		if (Transform.x0 == Transform.x1 || Transform.y0 == Transform.y1) /// выход из цикла
 			break;
 	}
 }
@@ -152,8 +166,10 @@ void DrawLine(int x0, int y0, int x1, int y1)
 */
 void UpdateApp()
 {
-	DrawLine(100, 300, 1900, 200);
+	InitTransformData(100, 300, 1900, 200);
+	DrawLine();
 }
+
 
 /** обработка команд устройств ввода
 */
