@@ -192,7 +192,7 @@ void DrawLine()
 
 /** Алгоритм отрисовки квадрата
 */
-void DrawSquare()
+void DrawSquare(int width, int height)
 {
 	for (int i = 0; i < sizeof(Transform.Index)/sizeof(Transform.Index[0]); i++)
 	{
@@ -206,7 +206,7 @@ void DrawSquare()
 			Transform.Vertex[Point0 - 1][1],
 			Transform.Vertex[Point1 - 1][0],
 			Transform.Vertex[Point1 - 1][1],
-			500, 500);
+			width, height);
 
 		/// отрисовываем грани квадрата по точкам
 		DrawLine();
@@ -217,7 +217,7 @@ void DrawSquare()
 */
 void UpdateApp()
 {
-	DrawSquare();
+	DrawSquare(500,500);
 }
 
 
