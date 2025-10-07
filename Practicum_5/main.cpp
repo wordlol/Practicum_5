@@ -32,7 +32,7 @@ struct
 	int	CenterY = window.height / 2;
 	float angleX, angleY, angleZ;
 	int sizeSquare;
-	float BoxLeftX, BoxLeftY, BoxRightX, BoxRightY;
+	int BoxLeftX, BoxLeftY, BoxRightX, BoxRightY;
 	int AX, AY, BX, BY, CX, CY;
 	/// точки вертексов квадрата
 	float Vertex[8][3] =
@@ -452,6 +452,11 @@ bool InTriangle(int PointX, int PointY)
 		return false;
 }
 
+void Zbuffer()
+{
+
+}
+
 /** Функция закрашивания полигона одним цветом
 */
 void Rasterisation()
@@ -552,136 +557,3 @@ int CALLBACK WinMain(
 	}
 	return 0;
 }
-
-
-////обновление приложения
-//void UpdateApp()
-//{  
-// ************** алгоритм художника
-//	//вычисление среднего z для z-buffer
-//	for (int i = 0; i < sizeof(Poligon) / sizeof(Poligon[0]); i++)
-//	{
-//		float Z1 = Vector3[(int)Poligon[i][0] - 1][2];
-//		float Z2 = Vector3[(int)Poligon[i][1] - 1][2];
-//		float Z3 = Vector3[(int)Poligon[i][2] - 1][2];
-//
-//		float Zmidle = (float)(Z1 + Z2 + Z3) / (float)3;
-//		Poligon[i][4] = Zmidle;
-//	}
-// ************** пузырек
-//	//пузырьковая сортировка полигонов z-buffer
-//	bool sort = false;
-//	while (!sort)
-//	{
-//		sort = true;
-//		for (int i = 1; i < sizeof(Poligon) / sizeof(Poligon[0]); i++)
-//		{
-//			float prev = Poligon[i - 1][4];
-//			float current = Poligon[i][4];
-//
-//			if (prev > current)
-//			{
-//				float temp[5];
-//				for (int j = 0; j < sizeof(Poligon[0]) / sizeof(Poligon[0][0]); j++)
-//				{
-//					temp[j] = Poligon[i - 1][j];
-//					Poligon[i - 1][j] = Poligon[i][j];
-//					Poligon[i][j] = temp[j];
-//					sort = false;
-//				}
-//			}
-//		}
-//	}
-// 
-//void DrawTriangle(float X1, float X2, float X3, float Y1, float Y2, float Y3, int Color)
-//{
-//	int R = 0;
-//	int G = 0;
-//	int B = 0;
-//	//выборка цвета
-//	if (Color == 1)
-//	{
-//		R = 255; G = 0; B = 0;
-//	}
-//	if (Color == 2)
-//	{
-//		R = 0; G = 255; B = 0;
-//	}
-//	if (Color == 3)
-//	{
-//		R = 0; G = 0; B = 255;
-//	}
-//	if (Color == 4)
-//	{
-//		R = 255; G = 255; B = 0;
-//	}
-//	if (Color == 5)
-//	{
-//		R = 255; G = 0; B = 255;
-//	}
-//	if (Color == 6)
-//	{
-//		R = 0; G = 255; B = 255;
-//	}
-//
-//	int AY = Y1 * Transform.height / 2 + Transform.CenterY;
-//	int BY = Y2 * Transform.height / 2 + Transform.CenterY;
-//	int CY = Y3 * Transform.height / 2 + Transform.CenterY;
-//
-//	int AX = X1 * Transform.width / 2 + Transform.CenterX;
-//	int BX = X2 * Transform.width / 2 + Transform.CenterX;
-//	int CX = X3 * Transform.width / 2 + Transform.CenterX;
-//
-//	int temp;
-//	//сортировка 3 вершин по minY и maxY
-//	if (AY > BY)
-//	{
-//		temp = AY;
-//		AY = BY;
-//		BY = temp;
-//	}
-//	if (AY > CY)
-//	{
-//		temp = AY;
-//		AY = CY;
-//		CY = temp;
-//	}
-//	if (BY > CY)
-//	{
-//		temp = BY;
-//		BY = CY;
-//		CY = temp;
-//	}
-//
-//	//алгоритм заливки триугольника однотонным цветом
-//	for (int i = AY; i < CY; i++)
-//	{
-//		int x1 = AX + (i - AY) * (CX - AX) / (CY - AY);
-//		int x2;
-//		if (i < BY)
-//		{
-//			x2 = AX + (i - AY) * (BX - AX) / (BY - AY);
-//		}
-//		else
-//		{
-//			if (CY == BY)
-//			{
-//				x2 = BX;
-//			}
-//			else
-//			{
-//				x2 = BX + (i - BY) * (CX - BX) / (CY - BY);
-//			}
-//		}
-//		if (x1 > x2)
-//		{
-//			temp = x1;
-//			x1 = x2;
-//			x2 = temp;
-//		}
-//		for (int j = x1; j < x2; j++)
-//		{
-//			SetPixel(window.contx, j, i, RGB(R, G, B));
-//		}
-//	}
-//}
