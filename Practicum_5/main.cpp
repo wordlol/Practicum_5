@@ -279,7 +279,7 @@ void InitApp()
 	window.contx = CreateCompatibleDC(window.dev_cont);
 	SelectObject(window.contx, CreateCompatibleBitmap(window.dev_cont, window.width, window.height));
 
-	InitAngleTransform(0, 45, 0); /// базовый поворот
+	InitAngleTransform(0, 0, 0); /// базовый поворот
 	InitCameraPercpective(4); /// базовая перспектива
 }
 
