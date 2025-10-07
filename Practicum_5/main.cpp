@@ -431,7 +431,9 @@ void FindBoundBox()
 	Transform.BoxLeftY = min(temp, Transform.BY);
 }
 
-int foo(int x0,int x1,int y0,int y1 ,int px, int py)
+/** Уровнение прямой проходящее через 2 точки на плоскости
+*/
+int FindPoint(int x0,int x1,int y0,int y1 ,int px, int py)
 {
 	return (x0 - px) * (y1 - y0) - (x1 - x0) * (y0 - py);
 }
@@ -440,9 +442,9 @@ int foo(int x0,int x1,int y0,int y1 ,int px, int py)
 */
 bool InTriangle(int PointX, int PointY)
 {
-	int a = foo(Transform.AX, Transform.BX, Transform.AY, Transform.BY,PointX, PointY);
-	int b = foo(Transform.BX, Transform.CX, Transform.BY, Transform.CY, PointX, PointY);
-	int c = foo(Transform.CX, Transform.AX, Transform.CY, Transform.AY, PointX, PointY);
+	int a = FindPoint(Transform.AX, Transform.BX, Transform.AY, Transform.BY,PointX, PointY);
+	int b = FindPoint(Transform.BX, Transform.CX, Transform.BY, Transform.CY, PointX, PointY);
+	int c = FindPoint(Transform.CX, Transform.AX, Transform.CY, Transform.AY, PointX, PointY);
 
 	if ((a >= 0 && b >= 0 && c >= 0) || (a <= 0 && b <= 0 && c <= 0))
 		return true;
