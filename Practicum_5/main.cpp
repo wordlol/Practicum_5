@@ -211,7 +211,10 @@ void InitCameraPercpective(float cameraDist)
 */
 void DrawLine()
 {
-	for (int i = 0; i < Transform.sizeSquare; i++)
+	bool StatusX = false;
+	bool StatusY = false;
+
+	while (true)
 	{
 		SetPixel(window.contx, Transform.x0, Transform.y0, RGB(255, 0, 0)); /// отрисовки линии
 
@@ -232,6 +235,14 @@ void DrawLine()
 			}
 		}
 
+		/// проверка на завершение отрисовки линии
+		if (Transform.x0 == Transform.x1)
+			StatusX = true;
+		if (Transform.y0 == Transform.y1)
+			StatusY = true;
+
+		if (StatusX && StatusY)
+			break;
 	}
 }
 
@@ -268,7 +279,7 @@ void InitApp()
 	window.contx = CreateCompatibleDC(window.dev_cont);
 	SelectObject(window.contx, CreateCompatibleBitmap(window.dev_cont, window.width, window.height));
 
-	InitAngleTransform(0, 0, 0); /// базовый поворот
+	InitAngleTransform(0, 45, 0); /// базовый поворот
 	InitCameraPercpective(4); /// базовая перспектива
 }
 
