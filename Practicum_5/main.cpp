@@ -210,11 +210,14 @@ void InitAngleTransform(int angleX, int angleY, int angleZ)
 */
 void DrawLine()
 {
-	for (int i = 0; i < Transform.sizeSquare; i++)
+	bool StatusX = false;
+	bool StatusY = false;
+
+	while (true)
 	{
 		SetPixel(window.contx, Transform.x0, Transform.y0, RGB(255, 0, 0)); /// отрисовки линии
 
-		if (Transform.direction  > -Transform.dy)
+		if (Transform.direction > -Transform.dy)
 		{
 			if (Transform.x0 != Transform.x1)
 			{
@@ -222,7 +225,7 @@ void DrawLine()
 				Transform.x0 += Transform.signX; /// применения сдвига пикселя на x
 			}
 		}
-		if (Transform.direction  < Transform.dx)
+		if (Transform.direction < Transform.dx)
 		{
 			if (Transform.y0 != Transform.y1)
 			{
@@ -231,6 +234,14 @@ void DrawLine()
 			}
 		}
 
+		/// проверка на завершение отрисовки линии
+		if (Transform.x0 == Transform.x1)
+			StatusX = true;
+		if (Transform.y0 == Transform.y1)
+			StatusY = true;
+
+		if (StatusX && StatusY)
+			break;
 	}
 }
 
