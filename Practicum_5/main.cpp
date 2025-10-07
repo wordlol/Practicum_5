@@ -170,22 +170,37 @@ void InitTransformData(int x0, int y0, int x1, int y1, int width, int height)
 */
 void DrawLine()
 {
+	bool StatusX = false;
+	bool StatusY = false;
+
 	while (true)
 	{
 		SetPixel(window.contx, Transform.x0, Transform.y0, RGB(255, 0, 0)); /// отрисовки линии
 
 		if (Transform.direction > -Transform.dy)
 		{
-			Transform.direction -= Transform.dy; /// изменение направления по y
-			Transform.x0 += Transform.signX; /// применения сдвига пикселя на x
+			if (Transform.x0 != Transform.x1)
+			{
+				Transform.direction -= Transform.dy; /// изменение направления по y
+				Transform.x0 += Transform.signX; /// применения сдвига пикселя на x
+			}
 		}
 		if (Transform.direction < Transform.dx)
 		{
-			Transform.direction += Transform.dx; /// изменение направления по x
-			Transform.y0 += Transform.signY; /// применения сдвига пикселя на y
+			if (Transform.y0 != Transform.y1)
+			{
+				Transform.direction += Transform.dx; /// изменение направления по x
+				Transform.y0 += Transform.signY; /// применения сдвига пикселя на y
+			}
 		}
 
-		if (Transform.x0 == Transform.x1 && Transform.y0 == Transform.y1) /// выход из цикла
+		/// проверка на завершение отрисовки линии
+		if (Transform.x0 == Transform.x1)
+			StatusX = true;
+		if (Transform.y0 == Transform.y1)
+			StatusY = true;
+
+		if (StatusX && StatusY)
 			break;
 	}
 }
