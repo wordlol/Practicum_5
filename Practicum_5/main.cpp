@@ -132,6 +132,7 @@ struct
 		{0,0,0},
 	};
 
+	int ZBuffer[1920][1080]{0};
 } Transform;
 
 /** обработка потока сообщений
@@ -351,7 +352,7 @@ void DrawSquare(int size)
 		);
 
 		/// отрисовываем грани квадрата по точкам
-		DrawLine();
+		//DrawLine();
 	}
 }
 
@@ -452,11 +453,6 @@ bool InTriangle(int PointX, int PointY)
 		return false;
 }
 
-void Zbuffer()
-{
-
-}
-
 /** Функция закрашивания полигона одним цветом
 */
 void Rasterisation()
@@ -470,8 +466,21 @@ void Rasterisation()
 		{
 			for (int x = Transform.BoxLeftX; x < Transform.BoxRightX; x++)
 			{
-				if(InTriangle(x, y))
-				SetPixel(window.contx, x , y , RGB(Transform.Color[0][0], Transform.Color[0][1], Transform.Color[0][2]));
+				if (InTriangle(x, y))
+				{
+					int z1 = Transform.Vertex[Transform.Poligon[i][0] - 1][2];
+					int z2 = Transform.Vertex[Transform.Poligon[i][1] - 1][2];
+					int z3 = Transform.Vertex[Transform.Poligon[i][2] - 1][2];
+
+					int temp;
+					int mmm = max(z1, z2);
+					temp = max(mmm, z3);
+
+					if (temp >= Transform.ZBuffer[x][y]) {
+						SetPixel(window.contx, x, y, RGB(Transform.Color[0][0], Transform.Color[0][1], Transform.Color[0][2]));
+						Transform.ZBuffer[x][y] = temp;
+					}
+				}
 			}
 		}
 	}
@@ -486,15 +495,15 @@ void InitApp()
 	window.contx = CreateCompatibleDC(window.dev_cont);
 	SelectObject(window.contx, CreateCompatibleBitmap(window.dev_cont, window.width, window.height));
 
-	InitAngleTransform(0, 0, 0); /// базовый поворот
-	InitCameraPercpective(40);   /// базовая перспектива  
+	InitAngleTransform(-15, 0, 0); /// базовый поворот
+	InitCameraPercpective(400);   /// базовая перспектива  
 }
 
 /** Обновление приложения
 */
 void UpdateApp()
 {
-	InitAngleTransform(2, 2, 2); /// поворот за тик (можно использовать без таймера)
+	InitAngleTransform(0, 2, 2); /// поворот за тик (можно использовать без таймера)
 	Rasterisation();
 	DrawSquare(100);
 }
