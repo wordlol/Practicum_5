@@ -35,7 +35,7 @@ struct
 	int BoxLeftX, BoxLeftY, BoxRightX, BoxRightY , BoxLeftZ, BoxRightZ;
 	int AX, AY, BX, BY, CX, CY, AZ, BZ, CZ;
 	int cameraDist;
-	int timer;
+	int timer ;
 	int DefultVertexBuffer[8][3] =
 	{
 				{-1,	-1 ,   1},
@@ -115,6 +115,7 @@ struct
 				{1,4},
 	};
 
+	/// массив полигонов
 	int Poligon[12][5] =
 	{
 		////front //red
@@ -140,12 +141,18 @@ struct
 		{1,8,4 ,6},
 	};
 
+	/// массив цветов
 	int Color[1][3] =
 	{
 		{0,0,0},
 	};
 
-	int ZBuffer[1920][1080]{0};
+	/// zBuffer для всего окна
+	int ZBuffer[1920][1080];
+
+	/// zBuffer для цвета
+	int ZBufferColor[1920][1080];
+
 } Transform;
 
 /** обработка потока сообщений
@@ -349,7 +356,7 @@ void DrawLine()
 
 /** Алгоритм отрисовки квадрата
 */
-void DrawSquare(int size)
+void DrawSquare(int size, bool draw)
 {
 	for (int i = 0; i < sizeof(Transform.Index) / sizeof(Transform.Index[0]); i++)
 	{
@@ -367,7 +374,10 @@ void DrawSquare(int size)
 		);
 
 		/// отрисовываем грани квадрата по точкам
+		if (draw == true)
+		{
 		DrawLine();
+		}
 	}
 }
 
@@ -428,8 +438,6 @@ void InitPointTriangle(int NumPoligon)
 	Transform.CX = Transform.Vertex[Transform.Poligon[NumPoligon][2] - 1][0] * (Transform.sizeSquare / 2) + Transform.CenterX;
 	Transform.CY = Transform.Vertex[Transform.Poligon[NumPoligon][2] - 1][1] * (Transform.sizeSquare / 2) + Transform.CenterY;
 	Transform.CZ = Transform.Vertex[Transform.Poligon[NumPoligon][1] - 1][2] * (Transform.sizeSquare / 2) + Transform.cameraDist;
-
-	FindColor(Transform.Poligon[NumPoligon][3]);
 }
 
 /** Найти описывающий прямоугольник
@@ -477,6 +485,8 @@ bool InTriangleXY(int PointX, int PointY)
 		return false;
 }
 
+/** Метод замены 2 элементов
+*/
 void Swap(int& value1, int& value2)
 {
 	int temp = value2;
@@ -484,6 +494,8 @@ void Swap(int& value1, int& value2)
 	value1 = temp;
 }
 
+/** Сортирует вершины по старшенству по z
+*/
 void SwapVertexZ()
 {
 	if (Transform.BZ >= Transform.AZ)
@@ -515,7 +527,7 @@ int ZBuffer(int PointX, int PointY)
 	SwapVertexZ();
 
 	int start = min(Transform.BZ, Transform.CZ);
-
+	float s = Transform.Vertex[1][1];
 	/// вектора
 	int vecABx1 = Transform.BX - Transform.AX;
 	int vecABy1 = Transform.BY - Transform.AY;
@@ -541,20 +553,9 @@ int ZBuffer(int PointX, int PointY)
 	}
 }
 
-void ClearZBuffer()
-{
-	for (int i = 0; i < sizeof(Transform.ZBuffer)/sizeof(Transform.ZBuffer[0]); i++)
-	{
-		for (int j = 0; j < sizeof(Transform.ZBuffer[0]) / sizeof(Transform.ZBuffer[0][0]); j++)
-		{
-			Transform.ZBuffer[i][j] = 0;
-		}
-	}
-}
-
-/** Функция закрашивания полигона одним цветом
+/** Функция которая загружает данные пиксилей в ZBuffer
 */
-void Rasterisation()
+void SetZBuffer()
 {
 	for (int i = 0; i < sizeof(Transform.Poligon)/sizeof(Transform.Poligon[0]); i++)
 	{
@@ -568,7 +569,6 @@ void Rasterisation()
 				if (InTriangleXY(x, y))
 				{
 					int z = ZBuffer(x, y);
-
 					if (Transform.ZBuffer[x][y] == 0)
 					{
 						Transform.ZBuffer[x][y] = z;
@@ -576,7 +576,7 @@ void Rasterisation()
 					if (z <= Transform.ZBuffer[x][y])
 					{
 						Transform.ZBuffer[x][y] = z;
-				        SetPixel(window.contx, x, y, RGB(Transform.Color[0][0], Transform.Color[0][1], Transform.Color[0][2]));
+						Transform.ZBufferColor[x][y] = Transform.Poligon[i][3];
 					}
 				}
 			}
@@ -584,6 +584,39 @@ void Rasterisation()
 	}
 }
 
+/** отрисовывает изображения из ZBufferColor
+*/
+void Render()
+{
+	for (int i = 0; i < sizeof(Transform.ZBufferColor) / sizeof(Transform.ZBufferColor[0]); i++)
+	{
+		for (int j = 0; j < sizeof(Transform.ZBufferColor[0]) / sizeof(Transform.ZBufferColor[0][0]); j++)
+		{
+			if (Transform.ZBufferColor[i][j] != 0)
+			{
+				FindColor(Transform.ZBufferColor[i][j]);
+				SetPixel(window.contx, i, j, RGB(Transform.Color[0][0], Transform.Color[0][1], Transform.Color[0][2]));
+			}
+		}
+	}
+}
+
+/** очищает zbuffer и ZBufferColor до стандартный значений
+*/
+void ClearZBuffer()
+{
+	for (int i = 0; i < sizeof(Transform.ZBuffer)/sizeof(Transform.ZBuffer[0]); i++)
+	{
+		for (int j = 0; j < sizeof(Transform.ZBuffer[0]) / sizeof(Transform.ZBuffer[0][0]); j++)
+		{
+			Transform.ZBuffer[i][j] = 0;
+			Transform.ZBufferColor[i][j] = 0;
+		}
+	}
+}
+
+/** очищает Vertex buffer до стандартный значений
+*/
 void ClearVertexBuffer()
 {
 	for (int i = 0; i < sizeof(Transform.Vertex)/ sizeof(Transform.Vertex[0]); i++)
@@ -609,10 +642,11 @@ void InitApp()
 void UpdateApp()
 {
 	int tic = Transform.timer;
-	InitAngleTransform(0, tic, 2); /// поворот за тик (можно использовать без таймера)
-	InitCameraPercpective(20);   /// базовая перспектива  
-	Rasterisation();
-	DrawSquare(100);
+	InitAngleTransform(15, tic, 0); /// поворот за тик
+	InitCameraPercpective(20);   /// перспектива  
+	SetZBuffer();
+	Render();
+	DrawSquare(150,false);
 
 	ClearVertexBuffer();
 	ClearZBuffer();
@@ -672,7 +706,7 @@ int CALLBACK WinMain(
 		UpdateApp();
 
 
-		Transform.timer += 3;
+		Transform.timer += 10;
 
 		/// задержка обновления
 		Sleep(16);
