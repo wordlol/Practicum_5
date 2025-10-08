@@ -356,7 +356,7 @@ void DrawLine()
 
 /** Алгоритм отрисовки квадрата
 */
-void DrawSquare(int size, bool draw)
+void DrawSquare(int size, bool drawlines)
 {
 	for (int i = 0; i < sizeof(Transform.Index) / sizeof(Transform.Index[0]); i++)
 	{
@@ -374,7 +374,7 @@ void DrawSquare(int size, bool draw)
 		);
 
 		/// отрисовываем грани квадрата по точкам
-		if (draw == true)
+		if (drawlines == true)
 		{
 		DrawLine();
 		}
