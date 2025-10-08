@@ -20,6 +20,142 @@ struct
 	int width = GetSystemMetrics(SM_CXSCREEN), height = GetSystemMetrics(SM_CYSCREEN);
 } window;
 
+/** структура с данными о координатах
+*/
+struct
+{
+	int x0, y0, x1, y1;
+	int	dx, dy;
+	int	signX, signY;
+	int	direction;
+	int	CenterX = window.width / 2;
+	int	CenterY = window.height / 2;
+	float angleX, angleY, angleZ;
+	int sizeSquare;
+	int BoxLeftX, BoxLeftY, BoxRightX, BoxRightY, BoxLeftZ, BoxRightZ;
+	int AX, AY, BX, BY, CX, CY, AZ, BZ, CZ;
+	int cameraDist;
+	int timer;
+
+	int DefultVertexBuffer[8][3] =
+	{
+				{-1,	-1 ,   1},
+				{-1,	 1 ,   1},
+				{ 1,	 1 ,   1},
+				{ 1,	-1 ,   1},
+
+				{-1,	-1 ,  -1},
+				{-1,	 1 ,  -1},
+				{ 1,	 1 ,  -1},
+				{ 1,	-1 ,  -1},
+	};
+
+	/// точки вертексов квадрата
+	float Vertex[8][3] =
+	{
+				{-1,	-1 ,   1},
+				{-1,	 1 ,   1},
+				{ 1,	 1 ,   1},
+				{ 1,	-1 ,   1},
+
+				{-1,	-1 ,  -1},
+				{-1,	 1 ,  -1},
+				{ 1,	 1 ,  -1},
+				{ 1,	-1 ,  -1},
+	};
+
+	/// последовательность отрисовки квадрата
+	int Index[36][2] =
+	{
+				{1,2},
+				{2,3},
+				{3,1},
+
+				{1,3},
+				{3,4},
+				{4,1},
+
+				{5,6},
+				{6,7},
+				{7,5},
+
+				{5,7},
+				{7,8},
+				{8,5},
+
+				{1,5},
+				{5,6},
+				{6,1},
+
+				{1,6},
+				{6,2},
+				{2,1},
+
+				{2,6},
+				{6,7},
+				{7,2},
+
+				{2,7},
+				{7,3},
+				{3,2},
+
+				{3,7},
+				{7,8},
+				{8,3},
+
+				{3,8},
+				{8,4},
+				{4,3},
+
+				{4,8},
+				{8,5},
+				{5,4},
+
+				{4,5},
+				{5,1},
+				{1,4},
+	};
+
+	/// массив полигонов
+	int Poligon[12][5] =
+	{
+		////front //red
+		{1,2,3 ,1},
+		{1,3,4 ,1},
+
+		//back //green
+		{5,6,7 ,2},
+		{5,7,8 ,2},
+		//left //blue
+		{1,5,6 ,3},
+		{1,6,2 ,3},
+
+		//right //red green
+		{4,8,7 ,4},
+		{4,7,3 ,4},
+		//top //red blue
+		{2,6,7 ,5},
+		{2,7,3 ,5},
+
+		//bottom //green blue
+		{1,5,8 ,6},
+		{1,8,4 ,6},
+	};
+
+	/// массив цветов
+	int Color[1][3] =
+	{
+		{0,0,0},
+	};
+
+	/// zBuffer дл€ всего окна
+	int ZBuffer[1920][1080];
+
+	/// zBuffer дл€ цвета
+	int ZBufferColor[1920][1080];
+
+} Transform;
+
 /** обработка потока сообщений
 */
 static LRESULT CALLBACK WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -98,156 +234,6 @@ void ShowBitmap(HDC hDC, int x, int y, int x1, int y1, HBITMAP hBitmapBall)
 
 	DeleteDC(hMemDC);
 }
-
-/** загрузка модулей приложени€
-*/
-void InitApp()
-{
-	//создание и иниализаци€ контекста устройсва и девайс устройства
-	window.dev_cont = GetDC(window.hWnd);
-	window.contx = CreateCompatibleDC(window.dev_cont);
-	SelectObject(window.contx, CreateCompatibleBitmap(window.dev_cont, window.width, window.height));
-}
-
-
-
-/** структура с данными о координатах
-*/
-struct
-{
-	int x0, y0, x1, y1;
-	int	dx, dy;
-	int	signX, signY;
-	int	direction;
-	int	CenterX = window.width / 2;
-	int	CenterY = window.height / 2;
-	float angleX, angleY, angleZ;
-	int sizeSquare;
-	int BoxLeftX, BoxLeftY, BoxRightX, BoxRightY , BoxLeftZ, BoxRightZ;
-	int AX, AY, BX, BY, CX, CY, AZ, BZ, CZ;
-	int cameraDist;
-	int timer;
-
-	/// базовый VertexBuffer
-	int DefultVertexBuffer[8][3] =
-	{
-				{-1,	-1 ,   0},
-				{-1,	 1 ,   0},
-				{ 1,	 1 ,   0},
-				{ 1,	-1 ,   0},
-
-				{-1,	-1 ,   2},
-				{-1,	 1 ,   2},
-				{ 1,	 1 ,   2},
-				{ 1,	-1 ,   2},
-	};
-
-	/// точки вертексов квадрата
-	float Vertex[8][3] =
-	{
-				{-1,	-1 ,   1},
-				{-1,	 1 ,   1},
-				{ 1,	 1 ,   1},
-				{ 1,	-1 ,   1},
-
-				{-1,	-1 ,  -1},
-				{-1,	 1 ,  -1},
-				{ 1,	 1 ,  -1},
-				{ 1,	-1 ,  -1},
-	};
-
-	/// последовательность отрисовки квадрата
-	int Index[36][2] =
-	{
-				{1,2},
-				{2,3},
-				{3,1},
-		
-				{1,3},
-				{3,4},
-				{4,1},
-		
-				{5,6},
-				{6,7},
-				{7,5},
-		
-				{5,7},
-				{7,8},
-				{8,5},
-		
-				{1,5},
-				{5,6},
-				{6,1},
-		
-				{1,6},
-				{6,2},
-				{2,1},
-		
-				{2,6},
-				{6,7},
-				{7,2},
-		
-				{2,7},
-				{7,3},
-				{3,2},
-		
-				{3,7},
-				{7,8},
-				{8,3},
-		
-				{3,8},
-				{8,4},
-				{4,3},
-		
-				{4,8},
-				{8,5},
-				{5,4},
-		
-				{4,5},
-				{5,1},
-				{1,4},
-	};
-
-	/// массив полигонов
-	int Poligon[12][4] =
-	{
-		//front //red
-		{1,2,3 ,1},
-		{3,4,1 ,1},
-
-		//back //green
-		{5,6,7 ,2},
-		{7,8,5 ,2},
-
-		//left //blue
-		{1,5,6 ,3},
-		{6,2,1 ,3},
-
-		//right //red green
-		{4,8,7 ,4},
-		{7,3,4 ,4},
-
-		//top //red blue
-		{2,6,7 ,5},
-		{7,3,2 ,5},
-
-		//bottom //green blue
-		{1,5,8 ,6},
-		{8,4,1 ,6},
-	};
-
-	/// массив цветов
-	int Color[1][3] =
-	{
-		{0,0,0},
-	};
-
-	/// zBuffer дл€ всего окна
-	int ZBuffer[1920][1080];
-
-	/// zBuffer дл€ цвета
-	int ZBufferColor[1920][1080];
-} Transform;
 
 
 
@@ -330,25 +316,6 @@ void InitCameraPercpective(float cameraDist)
 	}
 }
 
-/** ѕолучаем данные полигона
-*/
-void InitPointTriangle(int NumPoligon)
-{
-	Transform.AX = Transform.Vertex[Transform.Poligon[NumPoligon][0] - 1][0] * (Transform.sizeSquare / 2) + Transform.CenterX;
-	Transform.AY = Transform.Vertex[Transform.Poligon[NumPoligon][0] - 1][1] * (Transform.sizeSquare / 2) + Transform.CenterY;
-	Transform.AZ = Transform.Vertex[Transform.Poligon[NumPoligon][0] - 1][2] * (Transform.sizeSquare / 2) + Transform.cameraDist;
-
-	Transform.BX = Transform.Vertex[Transform.Poligon[NumPoligon][1] - 1][0] * (Transform.sizeSquare / 2) + Transform.CenterX;
-	Transform.BY = Transform.Vertex[Transform.Poligon[NumPoligon][1] - 1][1] * (Transform.sizeSquare / 2) + Transform.CenterY;
-	Transform.BZ = Transform.Vertex[Transform.Poligon[NumPoligon][1] - 1][2] * (Transform.sizeSquare / 2) + Transform.cameraDist;
-											
-	Transform.CX = Transform.Vertex[Transform.Poligon[NumPoligon][2] - 1][0] * (Transform.sizeSquare / 2) + Transform.CenterX;
-	Transform.CY = Transform.Vertex[Transform.Poligon[NumPoligon][2] - 1][1] * (Transform.sizeSquare / 2) + Transform.CenterY;
-	Transform.CZ = Transform.Vertex[Transform.Poligon[NumPoligon][1] - 1][2] * (Transform.sizeSquare / 2) + Transform.cameraDist;
-}
-
-
-
 /** ‘ункци€ отрисвоки линии на экране окна по Ѕрезенхэйму
 */
 void DrawLine()
@@ -410,11 +377,10 @@ void DrawSquare(int size, bool drawlines)
 		/// отрисовываем грани квадрата по точкам
 		if (drawlines == true)
 		{
-		DrawLine();
+			DrawLine();
 		}
 	}
 }
-
 
 /** ѕоиск цвета
 */
@@ -422,8 +388,8 @@ void FindColor(int NumColor)
 {
 	if (NumColor == 1)
 	{
-		Transform.Color[0][0] = 255; 
-		Transform.Color[0][1] = 0; 
+		Transform.Color[0][0] = 255;
+		Transform.Color[0][1] = 0;
 		Transform.Color[0][2] = 0;
 	}
 	if (NumColor == 2)
@@ -458,6 +424,23 @@ void FindColor(int NumColor)
 	}
 }
 
+/** ѕолучаем данные полигона
+*/
+void InitPointTriangle(int NumPoligon)
+{
+	Transform.AX = Transform.Vertex[Transform.Poligon[NumPoligon][0] - 1][0] * (Transform.sizeSquare / 2) + Transform.CenterX;
+	Transform.AY = Transform.Vertex[Transform.Poligon[NumPoligon][0] - 1][1] * (Transform.sizeSquare / 2) + Transform.CenterY;
+	Transform.AZ = Transform.Vertex[Transform.Poligon[NumPoligon][0] - 1][2] * (Transform.sizeSquare / 2) + Transform.cameraDist;
+
+	Transform.BX = Transform.Vertex[Transform.Poligon[NumPoligon][1] - 1][0] * (Transform.sizeSquare / 2) + Transform.CenterX;
+	Transform.BY = Transform.Vertex[Transform.Poligon[NumPoligon][1] - 1][1] * (Transform.sizeSquare / 2) + Transform.CenterY;
+	Transform.BZ = Transform.Vertex[Transform.Poligon[NumPoligon][1] - 1][2] * (Transform.sizeSquare / 2) + Transform.cameraDist;
+
+	Transform.CX = Transform.Vertex[Transform.Poligon[NumPoligon][2] - 1][0] * (Transform.sizeSquare / 2) + Transform.CenterX;
+	Transform.CY = Transform.Vertex[Transform.Poligon[NumPoligon][2] - 1][1] * (Transform.sizeSquare / 2) + Transform.CenterY;
+	Transform.CZ = Transform.Vertex[Transform.Poligon[NumPoligon][1] - 1][2] * (Transform.sizeSquare / 2) + Transform.cameraDist;
+}
+
 /** Ќайти описывающий пр€моугольник
 */
 void FindBoundBox()
@@ -478,11 +461,10 @@ void FindBoundBox()
 
 /** ”ровнение пр€мой проход€щее через 2 точки на плоскости
 */
-int  FindPoint(int x0,int x1,int y0,int y1 ,int px, int py)
+int FindPoint(int x0, int x1, int y0, int y1, int px, int py)
 {
 	return (x0 - px) * (y1 - y0) - (x1 - x0) * (y0 - py);
 }
-
 
 /** ѕроверка €вл€етс€ ли точка в треугольнике
 */
@@ -533,7 +515,6 @@ void SwapVertexZ()
 	}
 }
 
-
 /** ѕоиск Z координаты на основе 2 точек XY (по 3 вершинам)
 */
 int ZBuffer(int PointX, int PointY)
@@ -541,20 +522,19 @@ int ZBuffer(int PointX, int PointY)
 	SwapVertexZ();
 
 	int start = min(Transform.BZ, Transform.CZ);
-
 	/// вектора
-	int vecABx1 =  Transform.AX - Transform.CX;
-	int vecABy1 =  Transform.AY - Transform.CY;
-	int vecABz1 =  Transform.AZ - Transform.CZ;
+	int vecABx1 = Transform.BX - Transform.AX;
+	int vecABy1 = Transform.BY - Transform.AY;
+	int vecABz1 = Transform.BZ - Transform.AZ;
 
-	int vecACx2 =  Transform.AX - Transform.BX;
-	int vecACy2 =  Transform.AY - Transform.BY;
-	int vecACz2 =  Transform.AZ - Transform.BZ;
+	int vecACx2 = Transform.CX - Transform.AX;
+	int vecACy2 = Transform.CY - Transform.AY;
+	int vecACz2 = Transform.CZ - Transform.AZ;
 
 	/// поиск нормали
-	int Normalx =  vecABy1 * vecABz1 - vecACz2 * vecACy2;
-	int Normaly = -(vecABx1 * vecABz1 - vecACz2 * vecACx2);
-	int Normalz =  vecABx1 * vecACy2 - vecABy1 * vecACx2;
+	int Normalx = vecABy1 * vecACz2 - vecABz1 * vecACy2;
+	int Normaly = -(vecABx1 * vecACz2 - vecABz1 * vecACx2);
+	int Normalz = vecABx1 * vecACy2 - vecABy1 * vecACx2;
 
 	/// уровение плоскости
 	for (int i = start; i < Transform.AZ; i++)
@@ -571,7 +551,7 @@ int ZBuffer(int PointX, int PointY)
 */
 void SetZBuffer()
 {
-	for (int i = 0; i < sizeof(Transform.Poligon)/sizeof(Transform.Poligon[0]); i++)
+	for (int i = 0; i < sizeof(Transform.Poligon) / sizeof(Transform.Poligon[0]); i++)
 	{
 		InitPointTriangle(i);
 		FindBoundBox();
@@ -598,7 +578,6 @@ void SetZBuffer()
 	}
 }
 
-
 /** отрисовывает изображени€ из ZBufferColor
 */
 void Render()
@@ -616,12 +595,11 @@ void Render()
 	}
 }
 
-
 /** очищает zbuffer и ZBufferColor до стандартный значений
 */
 void ClearZBuffer()
 {
-	for (int i = 0; i < sizeof(Transform.ZBuffer)/sizeof(Transform.ZBuffer[0]); i++)
+	for (int i = 0; i < sizeof(Transform.ZBuffer) / sizeof(Transform.ZBuffer[0]); i++)
 	{
 		for (int j = 0; j < sizeof(Transform.ZBuffer[0]) / sizeof(Transform.ZBuffer[0][0]); j++)
 		{
@@ -635,7 +613,7 @@ void ClearZBuffer()
 */
 void ClearVertexBuffer()
 {
-	for (int i = 0; i < sizeof(Transform.Vertex)/ sizeof(Transform.Vertex[0]); i++)
+	for (int i = 0; i < sizeof(Transform.Vertex) / sizeof(Transform.Vertex[0]); i++)
 	{
 		Transform.Vertex[i][0] = Transform.DefultVertexBuffer[i][0];
 		Transform.Vertex[i][1] = Transform.DefultVertexBuffer[i][1];
@@ -643,21 +621,30 @@ void ClearVertexBuffer()
 	}
 }
 
+/** загрузка модулей приложени€
+*/
+void InitApp()
+{
+	//создание и иниализаци€ контекста устройсва и девайс устройства
+	window.dev_cont = GetDC(window.hWnd);
+	window.contx = CreateCompatibleDC(window.dev_cont);
+	SelectObject(window.contx, CreateCompatibleBitmap(window.dev_cont, window.width, window.height));
+}
+
 /** ќбновление приложени€
 */
 void UpdateApp()
 {
-	int tic = Transform.timer % 360;
-	InitAngleTransform(15, tic, 0); /// поворот за тик
-	InitCameraPercpective(400);     /// перспектива  
+	int tic = Transform.timer;
+	InitAngleTransform(tic, tic, 0); /// поворот за тик
+	InitCameraPercpective(20);   /// перспектива  
+	SetZBuffer();
+	Render();
+	DrawSquare(150, false);
 
-	SetZBuffer();				    /// «аполн€ет ZBuffer
-	Render();						/// «аливка куба цветом из ZBuffer
-	DrawSquare(200,false);			/// отрисовка оконтовки куба
-
-	ClearVertexBuffer();			/// VertexBuffer устанавливает на стандартное значение
-	ClearZBuffer();				    /// ZBuffer устанавливает на стандартное значение
-}	
+	ClearVertexBuffer();
+	ClearZBuffer();
+}
 
 
 /** обработка команд устройств ввода
