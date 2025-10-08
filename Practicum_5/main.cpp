@@ -35,7 +35,9 @@ struct
 	int BoxLeftX, BoxLeftY, BoxRightX, BoxRightY , BoxLeftZ, BoxRightZ;
 	int AX, AY, BX, BY, CX, CY, AZ, BZ, CZ;
 	int cameraDist;
-	int timer ;
+	int timer;
+
+	/// базовый VertexBuffer
 	int DefultVertexBuffer[8][3] =
 	{
 				{-1,	-1 ,   1},
@@ -119,26 +121,28 @@ struct
 	int Poligon[12][5] =
 	{
 		////front //red
-		{1,2,3 ,1},
-		{1,3,4 ,1},
+		{1,2,3 ,1, 0},
+		{3,4,1 ,1, 0},
 
 		//back //green
-		{5,6,7 ,2},
-		{5,7,8 ,2},
+		{5,6,7 ,2, 0},
+		{7,8,5 ,2, 0},
+
 		//left //blue
-		{1,5,6 ,3},
-		{1,6,2 ,3},
+		{1,5,6 ,3, 0},
+		{6,2,1 ,3, 0},
 
 		//right //red green
-		{4,8,7 ,4},
-		{4,7,3 ,4},
+		{4,8,7 ,4, 0},
+		{7,3,4 ,4, 0},
+
 		//top //red blue
-		{2,6,7 ,5},
-		{2,7,3 ,5},
+		{2,6,7 ,5, 0},
+		{7,3,2 ,5, 0},
 
 		//bottom //green blue
-		{1,5,8 ,6}, 
-		{1,8,4 ,6},
+		{1,5,8 ,6, 0},
+		{8,4,1 ,6, 0},
 	};
 
 	/// массив цветов
@@ -152,7 +156,6 @@ struct
 
 	/// zBuffer для цвета
 	int ZBufferColor[1920][1080];
-
 } Transform;
 
 /** обработка потока сообщений
@@ -233,7 +236,6 @@ void ShowBitmap(HDC hDC, int x, int y, int x1, int y1, HBITMAP hBitmapBall)
 
 	DeleteDC(hMemDC);
 }
-
 
 
 /** Функция для загрузки данных для построения линии
@@ -527,15 +529,15 @@ int ZBuffer(int PointX, int PointY)
 	SwapVertexZ();
 
 	int start = min(Transform.BZ, Transform.CZ);
-	float s = Transform.Vertex[1][1];
-	/// вектора
-	int vecABx1 = Transform.BX - Transform.AX;
-	int vecABy1 = Transform.BY - Transform.AY;
-	int vecABz1 = Transform.BZ - Transform.AZ;
 
-	int vecACx2 = Transform.CX - Transform.AX;
-	int vecACy2 = Transform.CY - Transform.AY;
-	int vecACz2 = Transform.CZ - Transform.AZ;
+	/// вектора
+	int vecABx1 = Transform.AX - Transform.CX;
+	int vecABy1 = Transform.AY - Transform.CY;
+	int vecABz1 = Transform.AZ - Transform.CZ;
+
+	int vecACx2 = Transform.AX - Transform.CX;
+	int vecACy2 = Transform.AY - Transform.CY;
+	int vecACz2 = Transform.AZ - Transform.CZ;
 
 	/// поиск нормали
 	int Normalx =  vecABy1 * vecACz2 - vecABz1 * vecACy2;
@@ -573,7 +575,7 @@ void SetZBuffer()
 					{
 						Transform.ZBuffer[x][y] = z;
 					}
-					if (z <= Transform.ZBuffer[x][y])
+					if (z >= Transform.ZBuffer[x][y])
 					{
 						Transform.ZBuffer[x][y] = z;
 						Transform.ZBufferColor[x][y] = Transform.Poligon[i][3];
@@ -627,6 +629,28 @@ void ClearVertexBuffer()
 	}
 }
 
+/** соритруем полигоны
+*/
+void SortVertex()
+{
+	for (int i = 0; i < sizeof(Transform.Poligon) / sizeof(Transform.Poligon[0]); i++)
+	{
+		float z = Transform.Vertex[Transform.Poligon[i][0] - 1][2];
+		if (z > 0.5)
+			Transform.Poligon[i][4] = 5;
+		else if (z < 0.5 && z  > 0)
+			Transform.Poligon[i][4] = 1;
+		else if (z < 0)
+			Transform.Poligon[i][4] = -1;
+	}
+
+
+
+
+
+
+}
+
 /** загрузка модулей приложения
 */
 void InitApp()
@@ -642,11 +666,13 @@ void InitApp()
 void UpdateApp()
 {
 	int tic = Transform.timer;
-	InitAngleTransform(15, tic, 0); /// поворот за тик
-	InitCameraPercpective(20);   /// перспектива  
+	InitAngleTransform(15, 15, 0); /// поворот за тик
+	InitCameraPercpective(400);   /// перспектива  
+	SortVertex();
+
 	SetZBuffer();
 	Render();
-	DrawSquare(150,false);
+	DrawSquare(200,false);
 
 	ClearVertexBuffer();
 	ClearZBuffer();
