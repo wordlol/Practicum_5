@@ -33,10 +33,9 @@ struct
 	float angleX, angleY, angleZ;
 	int sizeSquare;
 	int BoxLeftX, BoxLeftY, BoxRightX, BoxRightY, BoxLeftZ, BoxRightZ;
-	int AX, AY, BX, BY, CX, CY, AZ, BZ, CZ;
+	float AX, AY, BX, BY, CX, CY, AZ, BZ, CZ;
 	int cameraDist;
 	int timer;
-
 	int DefultVertexBuffer[8][3] =
 	{
 				{-1,	-1 ,   1},
@@ -119,13 +118,14 @@ struct
 	/// массив полигонов
 	int Poligon[12][5] =
 	{
-		////front //red
+		//front //red
 		{1,2,3 ,1},
 		{1,3,4 ,1},
 
 		//back //green
 		{5,6,7 ,2},
 		{5,7,8 ,2},
+
 		//left //blue
 		{1,5,6 ,3},
 		{1,6,2 ,3},
@@ -133,6 +133,7 @@ struct
 		//right //red green
 		{4,8,7 ,4},
 		{4,7,3 ,4},
+
 		//top //red blue
 		{2,6,7 ,5},
 		{2,7,3 ,5},
@@ -316,6 +317,24 @@ void InitCameraPercpective(float cameraDist)
 	}
 }
 
+/** Получаем данные полигона
+*/
+void InitPointTriangle(int NumPoligon)
+{
+	Transform.AX = Transform.Vertex[Transform.Poligon[NumPoligon][0] - 1][0] * (Transform.sizeSquare / 2) + Transform.CenterX;
+	Transform.AY = Transform.Vertex[Transform.Poligon[NumPoligon][0] - 1][1] * (Transform.sizeSquare / 2) + Transform.CenterY;
+	Transform.AZ = Transform.Vertex[Transform.Poligon[NumPoligon][0] - 1][2] * (Transform.sizeSquare / 2) + Transform.cameraDist;
+
+	Transform.BX = Transform.Vertex[Transform.Poligon[NumPoligon][1] - 1][0] * (Transform.sizeSquare / 2) + Transform.CenterX;
+	Transform.BY = Transform.Vertex[Transform.Poligon[NumPoligon][1] - 1][1] * (Transform.sizeSquare / 2) + Transform.CenterY;
+	Transform.BZ = Transform.Vertex[Transform.Poligon[NumPoligon][1] - 1][2] * (Transform.sizeSquare / 2) + Transform.cameraDist;
+
+	Transform.CX = Transform.Vertex[Transform.Poligon[NumPoligon][2] - 1][0] * (Transform.sizeSquare / 2) + Transform.CenterX;
+	Transform.CY = Transform.Vertex[Transform.Poligon[NumPoligon][2] - 1][1] * (Transform.sizeSquare / 2) + Transform.CenterY;
+	Transform.CZ = Transform.Vertex[Transform.Poligon[NumPoligon][1] - 1][2] * (Transform.sizeSquare / 2) + Transform.cameraDist;
+}
+
+
 /** Функция отрисвоки линии на экране окна по Брезенхэйму
 */
 void DrawLine()
@@ -424,22 +443,6 @@ void FindColor(int NumColor)
 	}
 }
 
-/** Получаем данные полигона
-*/
-void InitPointTriangle(int NumPoligon)
-{
-	Transform.AX = Transform.Vertex[Transform.Poligon[NumPoligon][0] - 1][0] * (Transform.sizeSquare / 2) + Transform.CenterX;
-	Transform.AY = Transform.Vertex[Transform.Poligon[NumPoligon][0] - 1][1] * (Transform.sizeSquare / 2) + Transform.CenterY;
-	Transform.AZ = Transform.Vertex[Transform.Poligon[NumPoligon][0] - 1][2] * (Transform.sizeSquare / 2) + Transform.cameraDist;
-
-	Transform.BX = Transform.Vertex[Transform.Poligon[NumPoligon][1] - 1][0] * (Transform.sizeSquare / 2) + Transform.CenterX;
-	Transform.BY = Transform.Vertex[Transform.Poligon[NumPoligon][1] - 1][1] * (Transform.sizeSquare / 2) + Transform.CenterY;
-	Transform.BZ = Transform.Vertex[Transform.Poligon[NumPoligon][1] - 1][2] * (Transform.sizeSquare / 2) + Transform.cameraDist;
-
-	Transform.CX = Transform.Vertex[Transform.Poligon[NumPoligon][2] - 1][0] * (Transform.sizeSquare / 2) + Transform.CenterX;
-	Transform.CY = Transform.Vertex[Transform.Poligon[NumPoligon][2] - 1][1] * (Transform.sizeSquare / 2) + Transform.CenterY;
-	Transform.CZ = Transform.Vertex[Transform.Poligon[NumPoligon][1] - 1][2] * (Transform.sizeSquare / 2) + Transform.cameraDist;
-}
 
 /** Найти описывающий прямоугольник
 */
@@ -480,66 +483,34 @@ bool InTriangleXY(int PointX, int PointY)
 		return false;
 }
 
-/** Метод замены 2 элементов
-*/
-void Swap(int& value1, int& value2)
-{
-	int temp = value2;
-	value2 = value1;
-	value1 = temp;
-}
-
-/** Сортирует вершины по старшенству по z
-*/
-void SwapVertexZ()
-{
-	if (Transform.BZ >= Transform.AZ)
-	{
-		Swap(Transform.BZ, Transform.AZ);
-		Swap(Transform.BX, Transform.AX);
-		Swap(Transform.BY, Transform.AY);
-	}
-
-	if (Transform.BZ >= Transform.CZ)
-	{
-		Swap(Transform.BZ, Transform.CZ);
-		Swap(Transform.BX, Transform.CX);
-		Swap(Transform.BY, Transform.CY);
-	}
-
-	if (Transform.CZ >= Transform.AZ)
-	{
-		Swap(Transform.CZ, Transform.AZ);
-		Swap(Transform.CX, Transform.AX);
-		Swap(Transform.CY, Transform.AY);
-	}
-}
-
 /** Поиск Z координаты на основе 2 точек XY (по 3 вершинам)
 */
-int ZBuffer(int PointX, int PointY)
+float ZBuffer(int PointX, int PointY)
 {
-	SwapVertexZ();
+	int az = min(Transform.BZ, Transform.CZ);
 
-	int start = min(Transform.BZ, Transform.CZ);
 	/// вектора
-	int vecABx1 = Transform.BX - Transform.AX;
-	int vecABy1 = Transform.BY - Transform.AY;
-	int vecABz1 = Transform.BZ - Transform.AZ;
+	int X1 = Transform.BX - Transform.AX;
+	int Y1 = Transform.BY - Transform.AY;
+	int Z1 = Transform.BZ - Transform.AZ;
 
-	int vecACx2 = Transform.CX - Transform.AX;
-	int vecACy2 = Transform.CY - Transform.AY;
-	int vecACz2 = Transform.CZ - Transform.AZ;
+	int X2 = Transform.CX - Transform.AX;
+	int Y2 = Transform.CY - Transform.AY;
+	int Z2 = Transform.CZ - Transform.AZ;
 
 	/// поиск нормали
-	int Normalx = vecABy1 * vecACz2 - vecABz1 * vecACy2;
-	int Normaly = -(vecABx1 * vecACz2 - vecABz1 * vecACx2);
-	int Normalz = vecABx1 * vecACy2 - vecABy1 * vecACx2;
+	int A =	Y1 * Z2 - Z1 * Y2;
+	int B = -(X1 * Z2 - Z1 * X2);
+	int C =	X1 * Y2 - Y1 * X2;
+
+	//int D = -(A * Transform.AX, + B * Transform.AY + C * az);
+	//int z = -(A * PointX + B * PointY + D) / C;
+	//return z;
 
 	/// уровение плоскости
-	for (int i = start; i < Transform.AZ; i++)
+	for (int i = az; i < Transform.AZ; i++)
 	{
-		int zero = Normalx * (PointX - Transform.AX) + Normaly * (PointY - Transform.AY) + Normalz * (i - Transform.AZ);
+		int zero = A * (PointX - Transform.AX) + B * (PointY - Transform.AY) + C * (i - Transform.AZ);
 		if (zero == 0)
 		{
 			return i;
@@ -563,11 +534,7 @@ void SetZBuffer()
 				if (InTriangleXY(x, y))
 				{
 					int z = ZBuffer(x, y);
-					if (Transform.ZBuffer[x][y] == 0)
-					{
-						Transform.ZBuffer[x][y] = z;
-					}
-					if (z <= Transform.ZBuffer[x][y])
+					if (z > Transform.ZBuffer[x][y])
 					{
 						Transform.ZBuffer[x][y] = z;
 						Transform.ZBufferColor[x][y] = Transform.Poligon[i][3];
@@ -599,9 +566,9 @@ void Render()
 */
 void ClearZBuffer()
 {
-	for (int i = 0; i < sizeof(Transform.ZBuffer) / sizeof(Transform.ZBuffer[0]); i++)
+	for (int i = 0; i < sizeof(Transform.ZBufferColor) / sizeof(Transform.ZBufferColor[0]); i++)
 	{
-		for (int j = 0; j < sizeof(Transform.ZBuffer[0]) / sizeof(Transform.ZBuffer[0][0]); j++)
+		for (int j = 0; j < sizeof(Transform.ZBufferColor[0]) / sizeof(Transform.ZBufferColor[0][0]); j++)
 		{
 			Transform.ZBuffer[i][j] = 0;
 			Transform.ZBufferColor[i][j] = 0;
@@ -636,11 +603,11 @@ void InitApp()
 void UpdateApp()
 {
 	int tic = Transform.timer;
-	InitAngleTransform(15, tic, 0); /// поворот за тик
-	InitCameraPercpective(20);   /// перспектива  
+	InitAngleTransform(-29, tic, 0); /// поворот за тик
+	InitCameraPercpective(-3);   /// перспектива  
 	SetZBuffer();
 	Render();
-	DrawSquare(150, false);
+	DrawSquare(100, false);
 
 	ClearVertexBuffer();
 	ClearZBuffer();
