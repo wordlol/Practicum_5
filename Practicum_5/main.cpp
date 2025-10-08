@@ -150,10 +150,10 @@ struct
 	};
 
 	/// zBuffer для всего окна
-	int ZBuffer[1920][1080];
+	int ZBuffer[3000][3000];
 
 	/// zBuffer для цвета
-	int ZBufferColor[1920][1080];
+	int ZBufferColor[3000][3000];
 
 } Transform;
 
@@ -603,11 +603,11 @@ void InitApp()
 void UpdateApp()
 {
 	int tic = Transform.timer;
-	InitAngleTransform(-29, tic, 0); /// поворот за тик
-	InitCameraPercpective(-3);   /// перспектива  
+	InitAngleTransform(-35, tic, 0); /// поворот за тик
+	InitCameraPercpective(-4);   /// перспектива  
 	SetZBuffer();
 	Render();
-	DrawSquare(200, true);
+	DrawSquare(100, false);
 
 	ClearVertexBuffer();
 	ClearZBuffer();
