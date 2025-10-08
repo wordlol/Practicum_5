@@ -32,8 +32,23 @@ struct
 	int	CenterY = window.height / 2;
 	float angleX, angleY, angleZ;
 	int sizeSquare;
-	int BoxLeftX, BoxLeftY, BoxRightX, BoxRightY;
-	int AX, AY, BX, BY, CX, CY;
+	int BoxLeftX, BoxLeftY, BoxRightX, BoxRightY , BoxLeftZ, BoxRightZ;
+	int AX, AY, BX, BY, CX, CY, AZ, BZ, CZ;
+	int cameraDist;
+	int timer;
+	int DefultVertexBuffer[8][3] =
+	{
+				{-1,	-1 ,   1},
+				{-1,	 1 ,   1},
+				{ 1,	 1 ,   1},
+				{ 1,	-1 ,   1},
+
+				{-1,	-1 ,  -1},
+				{-1,	 1 ,  -1},
+				{ 1,	 1 ,  -1},
+				{ 1,	-1 ,  -1},
+	};
+
 	/// точки вертексов квадрата
 	float Vertex[8][3] =
 	{
@@ -109,7 +124,6 @@ struct
 		//back //green
 		{5,6,7 ,2},
 		{5,7,8 ,2},
-
 		//left //blue
 		{1,5,6 ,3},
 		{1,6,2 ,3},
@@ -117,7 +131,6 @@ struct
 		//right //red green
 		{4,8,7 ,4},
 		{4,7,3 ,4},
-
 		//top //red blue
 		{2,6,7 ,5},
 		{2,7,3 ,5},
@@ -286,10 +299,12 @@ void InitAngleTransform(int angleX, int angleY, int angleZ)
 */
 void InitCameraPercpective(float cameraDist)
 {
+	Transform.cameraDist = cameraDist;
+
 	for (int i = 0; i < sizeof(Transform.Vertex) / sizeof(Transform.Vertex[0]); i++)
 	{
-		Transform.Vertex[i][0] *= cameraDist / (Transform.Vertex[i][2] + cameraDist);
-		Transform.Vertex[i][1] *= cameraDist / (Transform.Vertex[i][2] + cameraDist);
+		Transform.Vertex[i][0] *= Transform.cameraDist / (Transform.Vertex[i][2] + Transform.cameraDist);
+		Transform.Vertex[i][1] *= Transform.cameraDist / (Transform.Vertex[i][2] + Transform.cameraDist);
 	}
 }
 
@@ -352,7 +367,7 @@ void DrawSquare(int size)
 		);
 
 		/// отрисовываем грани квадрата по точкам
-		//DrawLine();
+		DrawLine();
 	}
 }
 
@@ -404,12 +419,15 @@ void InitPointTriangle(int NumPoligon)
 {
 	Transform.AX = Transform.Vertex[Transform.Poligon[NumPoligon][0] - 1][0] * (Transform.sizeSquare / 2) + Transform.CenterX;
 	Transform.AY = Transform.Vertex[Transform.Poligon[NumPoligon][0] - 1][1] * (Transform.sizeSquare / 2) + Transform.CenterY;
-												
+	Transform.AZ = Transform.Vertex[Transform.Poligon[NumPoligon][0] - 1][2] * (Transform.sizeSquare / 2) + Transform.cameraDist;
+
 	Transform.BX = Transform.Vertex[Transform.Poligon[NumPoligon][1] - 1][0] * (Transform.sizeSquare / 2) + Transform.CenterX;
 	Transform.BY = Transform.Vertex[Transform.Poligon[NumPoligon][1] - 1][1] * (Transform.sizeSquare / 2) + Transform.CenterY;
+	Transform.BZ = Transform.Vertex[Transform.Poligon[NumPoligon][1] - 1][2] * (Transform.sizeSquare / 2) + Transform.cameraDist;
 												
 	Transform.CX = Transform.Vertex[Transform.Poligon[NumPoligon][2] - 1][0] * (Transform.sizeSquare / 2) + Transform.CenterX;
 	Transform.CY = Transform.Vertex[Transform.Poligon[NumPoligon][2] - 1][1] * (Transform.sizeSquare / 2) + Transform.CenterY;
+	Transform.CZ = Transform.Vertex[Transform.Poligon[NumPoligon][1] - 1][2] * (Transform.sizeSquare / 2) + Transform.cameraDist;
 
 	FindColor(Transform.Poligon[NumPoligon][3]);
 }
@@ -430,6 +448,12 @@ void FindBoundBox()
 
 	temp = min(Transform.AY, Transform.CY);
 	Transform.BoxLeftY = min(temp, Transform.BY);
+
+	temp = max(Transform.AZ, Transform.CZ);
+	Transform.BoxRightZ = max(temp, Transform.BZ);
+
+	temp = min(Transform.AZ, Transform.CZ);
+	Transform.BoxLeftZ = min(temp, Transform.BZ);
 }
 
 /** ”ровнение пр€мой проход€щее через 2 точки на плоскости
@@ -441,9 +465,9 @@ int FindPoint(int x0,int x1,int y0,int y1 ,int px, int py)
 
 /** ѕроверка €вл€етс€ ли точка в треугольнике
 */
-bool InTriangle(int PointX, int PointY)
+bool InTriangleXY(int PointX, int PointY)
 {
-	int a = FindPoint(Transform.AX, Transform.BX, Transform.AY, Transform.BY,PointX, PointY);
+	int a = FindPoint(Transform.AX, Transform.BX, Transform.AY, Transform.BY, PointX, PointY);
 	int b = FindPoint(Transform.BX, Transform.CX, Transform.BY, Transform.CY, PointX, PointY);
 	int c = FindPoint(Transform.CX, Transform.AX, Transform.CY, Transform.AY, PointX, PointY);
 
@@ -451,6 +475,81 @@ bool InTriangle(int PointX, int PointY)
 		return true;
 	else
 		return false;
+}
+
+void Swap(int& value1, int& value2)
+{
+	int temp = value2;
+	value2 = value1;
+	value1 = temp;
+}
+
+void SwapVertexZ()
+{
+	if (Transform.BZ >= Transform.AZ)
+	{
+		Swap(Transform.BZ, Transform.AZ);
+		Swap(Transform.BX, Transform.AX);
+		Swap(Transform.BY, Transform.AY);
+	}
+
+	if (Transform.BZ >= Transform.CZ)
+	{
+		Swap(Transform.BZ, Transform.CZ);
+		Swap(Transform.BX, Transform.CX);
+		Swap(Transform.BY, Transform.CY);
+	}
+
+	if (Transform.CZ >= Transform.AZ)
+	{
+		Swap(Transform.CZ, Transform.AZ);
+		Swap(Transform.CX, Transform.AX);
+		Swap(Transform.CY, Transform.AY);
+	}
+}
+
+/** ѕоиск Z координаты на основе 2 точек XY (по 3 вершинам)
+*/
+int ZBuffer(int PointX, int PointY)
+{
+	SwapVertexZ();
+
+	int start = min(Transform.BZ, Transform.CZ);
+
+	/// вектора
+	int vecABx1 = Transform.BX - Transform.AX;
+	int vecABy1 = Transform.BY - Transform.AY;
+	int vecABz1 = Transform.BZ - Transform.AZ;
+
+	int vecACx2 = Transform.CX - Transform.AX;
+	int vecACy2 = Transform.CY - Transform.AY;
+	int vecACz2 = Transform.CZ - Transform.AZ;
+
+	/// поиск нормали
+	int Normalx =  vecABy1 * vecACz2 - vecABz1 * vecACy2;
+	int Normaly = -(vecABx1 * vecACz2 - vecABz1 * vecACx2);
+	int Normalz =  vecABx1 * vecACy2 - vecABy1 * vecACx2;
+
+	/// уровение плоскости
+	for (int i = start; i < Transform.AZ; i++)
+	{
+		int zero = Normalx * (PointX - Transform.AX) + Normaly * (PointY - Transform.AY) + Normalz * (i - Transform.AZ);
+		if (zero == 0)
+		{
+			return i;
+		}
+	}
+}
+
+void ClearZBuffer()
+{
+	for (int i = 0; i < sizeof(Transform.ZBuffer)/sizeof(Transform.ZBuffer[0]); i++)
+	{
+		for (int j = 0; j < sizeof(Transform.ZBuffer[0]) / sizeof(Transform.ZBuffer[0][0]); j++)
+		{
+			Transform.ZBuffer[i][j] = 0;
+		}
+	}
 }
 
 /** ‘ункци€ закрашивани€ полигона одним цветом
@@ -466,23 +565,32 @@ void Rasterisation()
 		{
 			for (int x = Transform.BoxLeftX; x < Transform.BoxRightX; x++)
 			{
-				if (InTriangle(x, y))
+				if (InTriangleXY(x, y))
 				{
-					int z1 = Transform.Vertex[Transform.Poligon[i][0] - 1][2];
-					int z2 = Transform.Vertex[Transform.Poligon[i][1] - 1][2];
-					int z3 = Transform.Vertex[Transform.Poligon[i][2] - 1][2];
+					int z = ZBuffer(x, y);
 
-					int temp;
-					int mmm = max(z1, z2);
-					temp = max(mmm, z3);
-
-					if (temp >= Transform.ZBuffer[x][y]) {
-						SetPixel(window.contx, x, y, RGB(Transform.Color[0][0], Transform.Color[0][1], Transform.Color[0][2]));
-						Transform.ZBuffer[x][y] = temp;
+					if (Transform.ZBuffer[x][y] == 0)
+					{
+						Transform.ZBuffer[x][y] = z;
+					}
+					if (z <= Transform.ZBuffer[x][y])
+					{
+						Transform.ZBuffer[x][y] = z;
+				        SetPixel(window.contx, x, y, RGB(Transform.Color[0][0], Transform.Color[0][1], Transform.Color[0][2]));
 					}
 				}
 			}
 		}
+	}
+}
+
+void ClearVertexBuffer()
+{
+	for (int i = 0; i < sizeof(Transform.Vertex)/ sizeof(Transform.Vertex[0]); i++)
+	{
+		Transform.Vertex[i][0] = Transform.DefultVertexBuffer[i][0];
+		Transform.Vertex[i][1] = Transform.DefultVertexBuffer[i][1];
+		Transform.Vertex[i][2] = Transform.DefultVertexBuffer[i][2];
 	}
 }
 
@@ -494,18 +602,20 @@ void InitApp()
 	window.dev_cont = GetDC(window.hWnd);
 	window.contx = CreateCompatibleDC(window.dev_cont);
 	SelectObject(window.contx, CreateCompatibleBitmap(window.dev_cont, window.width, window.height));
-
-	InitAngleTransform(-15, 0, 0); /// базовый поворот
-	InitCameraPercpective(400);   /// базова€ перспектива  
 }
 
 /** ќбновление приложени€
 */
 void UpdateApp()
 {
-	InitAngleTransform(0, 2, 2); /// поворот за тик (можно использовать без таймера)
+	int tic = Transform.timer;
+	InitAngleTransform(0, tic, 2); /// поворот за тик (можно использовать без таймера)
+	InitCameraPercpective(20);   /// базова€ перспектива  
 	Rasterisation();
 	DrawSquare(100);
+
+	ClearVertexBuffer();
+	ClearZBuffer();
 }
 
 
@@ -560,6 +670,9 @@ int CALLBACK WinMain(
 
 		UpdateImage();
 		UpdateApp();
+
+
+		Transform.timer += 3;
 
 		/// задержка обновлени€
 		Sleep(16);
