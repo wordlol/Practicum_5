@@ -636,7 +636,7 @@ void InitApp()
 void UpdateApp()
 {
 	int tic = Transform.timer;
-	InitAngleTransform(tic, tic, 0); /// поворот за тик
+	InitAngleTransform(15, tic, 0); /// поворот за тик
 	InitCameraPercpective(20);   /// перспектива  
 	SetZBuffer();
 	Render();
