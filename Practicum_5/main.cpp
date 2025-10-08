@@ -116,7 +116,7 @@ struct
 	};
 
 	/// массив полигонов
-	int Poligon[12][5] =
+	int Poligon[12][4] =
 	{
 		//front //red
 		{1,2,3 ,1},
@@ -607,7 +607,7 @@ void UpdateApp()
 	InitCameraPercpective(-3);   /// перспектива  
 	SetZBuffer();
 	Render();
-	DrawSquare(100, false);
+	DrawSquare(200, true);
 
 	ClearVertexBuffer();
 	ClearZBuffer();
@@ -667,7 +667,7 @@ int CALLBACK WinMain(
 		UpdateApp();
 
 
-		Transform.timer += 10;
+		Transform.timer += 7;
 
 		/// задержка обновления
 		Sleep(16);
