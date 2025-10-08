@@ -118,31 +118,31 @@ struct
 	};
 
 	/// массив полигонов
-	int Poligon[12][5] =
+	int Poligon[12][4] =
 	{
 		////front //red
-		{1,2,3 ,1, 0},
-		{3,4,1 ,1, 0},
+		{1,2,3 ,1},
+		{3,4,1 ,1},
 
 		//back //green
-		{5,6,7 ,2, 0},
-		{7,8,5 ,2, 0},
+		{5,6,7 ,2},
+		{7,8,5 ,2},
 
 		//left //blue
-		{1,5,6 ,3, 0},
-		{6,2,1 ,3, 0},
+		{1,5,6 ,3},
+		{6,2,1 ,3},
 
 		//right //red green
-		{4,8,7 ,4, 0},
-		{7,3,4 ,4, 0},
+		{4,8,7 ,4},
+		{7,3,4 ,4},
 
 		//top //red blue
-		{2,6,7 ,5, 0},
-		{7,3,2 ,5, 0},
+		{2,6,7 ,5},
+		{7,3,2 ,5},
 
 		//bottom //green blue
-		{1,5,8 ,6, 0},
-		{8,4,1 ,6, 0},
+		{1,5,8 ,6},
+		{8,4,1 ,6},
 	};
 
 	/// массив цветов
@@ -436,7 +436,7 @@ void InitPointTriangle(int NumPoligon)
 	Transform.BX = Transform.Vertex[Transform.Poligon[NumPoligon][1] - 1][0] * (Transform.sizeSquare / 2) + Transform.CenterX;
 	Transform.BY = Transform.Vertex[Transform.Poligon[NumPoligon][1] - 1][1] * (Transform.sizeSquare / 2) + Transform.CenterY;
 	Transform.BZ = Transform.Vertex[Transform.Poligon[NumPoligon][1] - 1][2] * (Transform.sizeSquare / 2) + Transform.cameraDist;
-												
+											
 	Transform.CX = Transform.Vertex[Transform.Poligon[NumPoligon][2] - 1][0] * (Transform.sizeSquare / 2) + Transform.CenterX;
 	Transform.CY = Transform.Vertex[Transform.Poligon[NumPoligon][2] - 1][1] * (Transform.sizeSquare / 2) + Transform.CenterY;
 	Transform.CZ = Transform.Vertex[Transform.Poligon[NumPoligon][1] - 1][2] * (Transform.sizeSquare / 2) + Transform.cameraDist;
@@ -629,28 +629,6 @@ void ClearVertexBuffer()
 	}
 }
 
-/** соритруем полигоны
-*/
-void SortVertex()
-{
-	for (int i = 0; i < sizeof(Transform.Poligon) / sizeof(Transform.Poligon[0]); i++)
-	{
-		float z = Transform.Vertex[Transform.Poligon[i][0] - 1][2];
-		if (z > 0.5)
-			Transform.Poligon[i][4] = 5;
-		else if (z < 0.5 && z  > 0)
-			Transform.Poligon[i][4] = 1;
-		else if (z < 0)
-			Transform.Poligon[i][4] = -1;
-	}
-
-
-
-
-
-
-}
-
 /** загрузка модулей приложения
 */
 void InitApp()
@@ -666,9 +644,8 @@ void InitApp()
 void UpdateApp()
 {
 	int tic = Transform.timer;
-	InitAngleTransform(15, 15, 0); /// поворот за тик
+	InitAngleTransform(15, tic, 0); /// поворот за тик
 	InitCameraPercpective(400);   /// перспектива  
-	SortVertex();
 
 	SetZBuffer();
 	Render();
