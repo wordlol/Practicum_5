@@ -449,7 +449,42 @@ void InitPointTriangle(int NumPoligon)
 	Transform.CZ = Transform.Vertex[Transform.Poligon[NumPoligon][2] - 1][2] * (Transform.sizeSquare / 2) + Transform.cameraDist;
 }
 
-int FindZPoint(int x, int y)
+
+
+/** Интерполяция Z координаты (билинейная)
+*/
+float FindZPoint3(float x1, float x2, float x3, float y1, float y2, float y3, float z1, float z2, float z3, float x, float y)
+{
+		float denom = (y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3);
+
+		float   w1 = ((y2 - y3) * (x - x3) + (x3 - x2) * (y - y3)) / denom;
+		float 	w2 = ((y3 - y1) * (x - x3) + (x1 - x3) * (y - y3)) / denom;
+		float 	w3 = 1 - w1 - w2;
+
+		float z_target = w1 * z1 + w2 * z2 + w3 * z3;
+
+		return z_target;
+}
+
+/** Интерполяция Z координаты (построение плоскости)
+*/
+float FindZPoint2(float x1, float x2, float x3, float y1, float y2, float y3,float z1,float z2,float z3, float x, float y)
+{
+		float A = (y2 - y1) * (z3 - z1) - (z2 - z1) * (y3 - y1);
+		float B = (z2 - z1) * (x3 - x1) - (x2 - x1) * (z3 - z1);
+		float C = (x2 - x1) * (y3 - y1) - (y2 - y1) * (x3 - x1);
+		float D = -A * x1 - B * y1 - C * z1;
+
+	if (C != 0)
+	{
+		float z_target = (-A * x - B * y - D) / C;
+		return z_target;
+	}
+}
+
+/** Интерполяция Z координаты (барицентрические коофиценты)
+*/
+int FindZPoint1(int x, int y)
 {
 	// вектора 
 	float vecACy = Transform.AY - Transform.CY;
@@ -460,24 +495,33 @@ int FindZPoint(int x, int y)
 	float vecСBx = Transform.CX - Transform.BX;
 	float vecBCy = Transform.BY - Transform.CY;
 
-	int dx = x - Transform.CX;
-	int dy = y - Transform.CY;
+	int vx = x - Transform.CX;
+	int vy = y - Transform.CY;
 
-	// барицентрические коофицент для 2 сторон
-	float AC = (vecCAy * dx + vecACx * dy) / (vecBCy * vecACx + vecСBx * vecACy);
-	float CB = (vecBCy * dx + vecСBx * dy) / (vecBCy * vecACx + vecСBx * vecACy);
+	// барицентрические коофиценты
+	float AlphaAC = (vecCAy * vx + vecACx * vy) / (vecBCy * vecACx + vecСBx * vecACy);
+	float BetaCB = (vecBCy * vx + vecСBx * vy) / (vecBCy * vecACx + vecСBx * vecACy);
 
 	// Интерполяция z с использованием барицентрических координат
-	int z = CB * Transform.AZ + AC * Transform.BZ + (1.0 - CB - AC) * Transform.CZ;
+	int z = BetaCB * Transform.AZ + AlphaAC * Transform.BZ + (1.0 - BetaCB - AlphaAC) * Transform.CZ;
 	
 	return z;
 }
 
-void DrawTriangle(int x, int y)
+/** Рисуем пиксели с учетом zbuffer
+*/
+void DrawPixel(int x, int y)
 {
 	if (x > 0 && y > 0 && x <= window.width && y <= window.height)
 	{
-		int z = FindZPoint(x, y);
+		/*int z = FindZPoint(x, y);*/
+		int z = FindZPoint3(
+			Transform.AX, Transform.BX, Transform.CX, 
+			Transform.AY, Transform.BY, Transform.CY,
+			Transform.AZ, Transform.BZ, Transform.CZ,
+			x,
+			y);
+
 		if (z < Transform.ZBuffer[x][y]) {
 			Transform.ZBuffer[x][y] = z;
 			SetPixel(window.contx, x, y, RGB(Transform.Color[0][0], Transform.Color[0][1], Transform.Color[0][2]));
@@ -485,11 +529,34 @@ void DrawTriangle(int x, int y)
 	}
 }
 
+/** Метод для замены переменных местами
+*/
 void Swap(float& value1, float& value2)
 {
 	float temp = value1;
 	value1 = value2;
 	value2 = temp;
+}
+
+/** Алгоритм поиска точкек x1 и x2
+*/
+void FindXinterpolation(float vertices[3][3], int y ,int &x1,int &x2)
+{
+	x1 = vertices[0][0] + (y - vertices[0][1]) * (vertices[2][0] - vertices[0][0]) / (vertices[2][1] - vertices[0][1]);
+	if (y < (int)vertices[1][1])
+	{
+		x2 = vertices[0][0] + (y - vertices[0][1]) * (vertices[1][0] - vertices[0][0]) / (vertices[1][1] - vertices[0][1]);
+	}
+	else
+	{
+		if ((int)vertices[2][1] == (int)vertices[1][1])
+			x2 = vertices[1][0];
+		else
+			x2 = vertices[1][0] + (y - vertices[1][1]) * (vertices[2][0] - vertices[1][0]) / (vertices[2][1] - vertices[1][1]);
+	}
+
+	if (x1 > x2)
+		Swap(x1, x2);
 }
 
 /** Функция которая загружает данные пиксилей в ZBuffer
@@ -501,13 +568,14 @@ void Rasterization()
 		InitPointTriangle(i);
 		FindColor(Transform.Poligon[i][3]);
 
-		// Сортируем вершины по Y
+		// вершины
 		float vertices[3][3] = {
 			{Transform.AX, Transform.AY, Transform.AZ},
 			{Transform.BX, Transform.BY, Transform.BZ},
 			{Transform.CX, Transform.CY, Transform.CZ}
 		};
 
+		// сортируем вершины
 		for (int i = 0; i < sizeof(vertices) / sizeof(vertices[0]) - 1; i++)
 		{
 			for (int j = sizeof(vertices) / sizeof(vertices[0]) - 1; j > i; j--)
@@ -521,31 +589,17 @@ void Rasterization()
 			}
 		}
 
-
-
 		int x1;
 		int x2;
 		if (vertices[0][1] != vertices[2][1])
 		{
 			for (int y = vertices[0][1]; y <= vertices[2][1]; y++)
 			{
-						x1 = vertices[0][0] + (y - vertices[0][1]) * (vertices[2][0] - vertices[0][0]) / (vertices[2][1] - vertices[0][1]);
-					if (y < (int)vertices[1][1])
-					   {
-					   x2 = vertices[0][0] + (y - vertices[0][1]) * (vertices[1][0] - vertices[0][0]) / (vertices[1][1] - vertices[0][1]);
-					   }
-					else
-					{
-						if ((int)vertices[2][1] == (int)vertices[1][1])
-							x2 = vertices[1][0];
-						else
-							x2 = vertices[1][0] + (y - vertices[1][1]) * (vertices[2][0] - vertices[1][0]) / (vertices[2][1] - vertices[1][1]);
-					}
-				if (x1 > x2)
-					Swap(x1, x2);
+
+				FindXinterpolation(vertices, y, x1, x2); /// ищем точки x1, x2
 
 				for (int x = x1; x <= x2; x++) 
-					DrawTriangle(x, y);
+					DrawPixel(x, y); /// рисуем точку с учетом глибны (Zbuffer)
 			}
 		}
 	}
@@ -612,11 +666,12 @@ void UpdateApp()
 	ClearVertexBuffer();
 	ClearZBuffer();
 	InitAngleTransform(Transform.asiy, Transform.asix, Transform.tangag); /// поворот за тик
-	InitCameraPercpective(4);   /// перспектива  
-	DrawSquare(100, false);
-	Information(Transform.AX, Transform.AY, Transform.AZ);
-
+	InitCameraPercpective(40);   /// перспектива  
 	Rasterization();
+	DrawSquare(100, false);
+
+
+	Information(Transform.AX, Transform.AY, Transform.AZ);
 
 }
 
