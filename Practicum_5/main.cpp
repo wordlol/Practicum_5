@@ -32,10 +32,12 @@ struct
 	int	CenterY = window.height / 2;
 	float angleX, angleY, angleZ;
 	int sizeSquare;
-	int BoxLeftX, BoxLeftY, BoxRightX, BoxRightY, BoxLeftZ, BoxRightZ;
 	float AX, AY, BX, BY, CX, CY, AZ, BZ, CZ;
 	int cameraDist;
-	int timer;
+	int asix   = 0;
+	int asiy   = 0;
+	int tangag = 0;
+
 	int DefultVertexBuffer[8][3] =
 	{
 				{-1,	-1 ,   1},
@@ -151,9 +153,6 @@ struct
 
 	/// zBuffer для всего окна
 	int ZBuffer[3000][3000];
-
-	/// zBuffer для цвета
-	int ZBufferColor[3000][3000];
 
 } Transform;
 
@@ -310,11 +309,11 @@ void InitCameraPercpective(float cameraDist)
 {
 	Transform.cameraDist = cameraDist;
 
-	/*for (int i = 0; i < sizeof(Transform.Vertex) / sizeof(Transform.Vertex[0]); i++)
+	for (int i = 0; i < sizeof(Transform.Vertex) / sizeof(Transform.Vertex[0]); i++)
 	{
 		Transform.Vertex[i][0] *= Transform.cameraDist / (Transform.Vertex[i][2] + Transform.cameraDist);
 		Transform.Vertex[i][1] *= Transform.cameraDist / (Transform.Vertex[i][2] + Transform.cameraDist);
-	}*/
+	}
 }
 
 void Swap(int& value1, int& value2)
@@ -433,81 +432,6 @@ void FindColor(int NumColor)
 	}
 }
 
-
-/** Найти описывающий прямоугольник
-*/
-void FindBoundBox()
-{
-	int temp;
-	temp = max(Transform.AX, Transform.CX);
-	Transform.BoxRightX = max(temp, Transform.BX);
-
-	temp = min(Transform.AX, Transform.CX);
-	Transform.BoxLeftX = min(temp, Transform.BX);
-
-	temp = max(Transform.AY, Transform.CY);
-	Transform.BoxRightY = max(temp, Transform.BY);
-
-	temp = min(Transform.AY, Transform.CY);
-	Transform.BoxLeftY = min(temp, Transform.BY);
-}
-
-/** Уровнение прямой проходящее через 2 точки на плоскости
-*/
-int FindPoint(int x0, int x1, int y0, int y1, int px, int py)
-{
-	return (x0 - px) * (y1 - y0) - (x1 - x0) * (y0 - py);
-}
-
-/** Проверка является ли точка в треугольнике
-*/
-bool InTriangleXY(int PointX, int PointY)
-{
-	int a = FindPoint(Transform.AX, Transform.BX, Transform.AY, Transform.BY, PointX, PointY);
-	int b = FindPoint(Transform.BX, Transform.CX, Transform.BY, Transform.CY, PointX, PointY);
-	int c = FindPoint(Transform.CX, Transform.AX, Transform.CY, Transform.AY, PointX, PointY);
-
-	if ((a >= 0 && b >= 0 && c >= 0) || (a <= 0 && b <= 0 && c <= 0))
-		return true;
-	else
-		return false;
-}
-
-/** Поиск Z координаты на основе 2 точек XY (по 3 вершинам)
-*/
-float ZBuffer(int PointX, int PointY)
-{
-	int az = min(Transform.BZ, Transform.CZ);
-
-	/// вектора
-	int X1 = Transform.BX - Transform.AX;
-	int Y1 = Transform.BY - Transform.AY;
-	int Z1 = Transform.BZ - Transform.AZ;
-
-	int X2 = Transform.CX - Transform.AX;
-	int Y2 = Transform.CY - Transform.AY;
-	int Z2 = Transform.CZ - Transform.AZ;
-
-	/// поиск нормали
-	int A =	Y1 * Z2 - Z1 * Y2;
-	int B = -(X1 * Z2 - Z1 * X2);
-	int C =	X1 * Y2 - Y1 * X2;
-
-	//int D = -(A * Transform.AX, + B * Transform.AY + C * az);
-	//int z = -(A * PointX + B * PointY + D) / C;
-	//return z;
-
-	/// уровение плоскости
-	for (int i = az; i < Transform.AZ; i++)
-	{
-		int zero = A * (PointX - Transform.AX) + B * (PointY - Transform.AY) + C * (i - Transform.AZ);
-		if (zero == 0)
-		{
-			return i;
-		}
-	}
-}
-
 /** Получаем данные полигона
 */
 void InitPointTriangle(int NumPoligon)
@@ -525,103 +449,103 @@ void InitPointTriangle(int NumPoligon)
 	Transform.CZ = Transform.Vertex[Transform.Poligon[NumPoligon][2] - 1][2] * (Transform.sizeSquare / 2) + Transform.cameraDist;
 }
 
-/** Функция которая загружает данные пиксилей в ZBuffer
-*/
-void SetZBuffer()
+int FindZPoint(int x, int y)
 {
-	for (int i = 0; i < sizeof(Transform.Poligon) / sizeof(Transform.Poligon[0]); i++)
+	// вектора 
+	float vecACy = Transform.AY - Transform.CY;
+
+	float vecACx = Transform.AX - Transform.CX;
+	float vecCAy = Transform.CY - Transform.AY;
+
+	float vecСBx = Transform.CX - Transform.BX;
+	float vecBCy = Transform.BY - Transform.CY;
+
+	int dx = x - Transform.CX;
+	int dy = y - Transform.CY;
+
+	// барицентрические коофицент для 2 сторон
+	float AC = (vecCAy * dx + vecACx * dy) / (vecBCy * vecACx + vecСBx * vecACy);
+	float CB = (vecBCy * dx + vecСBx * dy) / (vecBCy * vecACx + vecСBx * vecACy);
+
+	// Интерполяция z с использованием барицентрических координат
+	int z = CB * Transform.AZ + AC * Transform.BZ + (1.0 - CB - AC) * Transform.CZ;
+	
+	return z;
+}
+
+void DrawTriangle(int x, int y)
+{
+	if (x > 0 && y > 0 && x <= window.width && y <= window.height)
 	{
-		/*FindBoundBox();*/
-		InitPointTriangle(i);
-		FindColor(Transform.Poligon[i][3]);
-
-		Transform.AY;
-		Transform.BY;
-		Transform.CY;
-
-		int temp = max(Transform.AY, Transform.BY);
-		int maxy = max(temp, Transform.CY);
-		temp = min(Transform.AY, Transform.BY);
-		int miny = min(temp, Transform.CY);
-
-		Transform.AY = miny;
-		Transform.CY = maxy;
-
-		int x1;
-		int x2;
-		float z1, z2;
-		if (Transform.AY != Transform.CY)
-		{
-		/// по этому условию нужно понять перевернулся ли куб или нет и менять стороны местами добавить переменную которая будет определять сейчас куб перевернут или нет
-		for (int y = Transform.AY; y <= Transform.CY; y++) {
-;
-			//нахождение x
-				x1 = Transform.AX + (y - Transform.AY) * (Transform.CX - Transform.AX) / (Transform.CY - Transform.AY);
-			if (y < Transform.BY )
-				x2 = Transform.AX + (y - Transform.AY) * (Transform.BX - Transform.AX) / (Transform.BY - Transform.AY);
-			else
-			{
-				if (Transform.CY == Transform.BY)
-					x2 = Transform.BX;
-				else
-					x2 = Transform.BX + (y - Transform.BY) * (Transform.CX - Transform.BX) / (Transform.CY - Transform.BY);
-			}
-			if (x1 > x2) { temp = x1; x1 = x2; x2 = temp; }
-
-
-			for (int x = x1; x < x2; x++)
-			{
-				// Вычисление барицентрических координат
-				float alpha = ((Transform.BY - Transform.CY) * (x - Transform.CX) + (Transform.CX - Transform.BX) * (y - Transform.CY)) /
-					((Transform.BY - Transform.CY) * (Transform.AX - Transform.CX) + (Transform.CX - Transform.BX) * (Transform.AY - Transform.CY));
-
-				float beta = ((Transform.CY - Transform.AY) * (x - Transform.CX) + (Transform.AX - Transform.CX) * (y - Transform.CY)) /
-					((Transform.BY - Transform.CY) * (Transform.AX - Transform.CX) + (Transform.CX - Transform.BX) * (Transform.AY - Transform.CY));
-
-				float gamma = 1.0f - alpha - beta;
-
-				// Интерполяция z с использованием барицентрических координат
-				int z = alpha * Transform.AZ + beta * Transform.BZ + gamma * Transform.CZ;
-
-				if (z < Transform.ZBuffer[x][y])
-				{
-					Transform.ZBuffer[x][y] = z;
-					SetPixel(window.contx, x, y, RGB(Transform.Color[0][0], Transform.Color[0][1], Transform.Color[0][2]));
-				}
-			}
+		int z = FindZPoint(x, y);
+		if (z < Transform.ZBuffer[x][y]) {
+			Transform.ZBuffer[x][y] = z;
+			SetPixel(window.contx, x, y, RGB(Transform.Color[0][0], Transform.Color[0][1], Transform.Color[0][2]));
 		}
-		}
-
-		/*for (int y = Transform.BoxLeftY; y < Transform.BoxRightY; y++)
-		{
-			for (int x = Transform.BoxLeftX; x < Transform.BoxRightX; x++)
-			{
-				if (InTriangleXY(x, y))
-				{
-					int z = ZBuffer(x, y);
-					if (z > Transform.ZBuffer[x][y])
-					{
-						Transform.ZBuffer[x][y] = z;
-						Transform.ZBufferColor[x][y] = Transform.Poligon[i][3];
-					}
-				}
-			}
-		}*/
 	}
 }
 
-/** отрисовывает изображения из ZBufferColor *******************
-*/
-void Render()
+void Swap(float& value1, float& value2)
 {
-	for (int i = 0; i < sizeof(Transform.ZBufferColor) / sizeof(Transform.ZBufferColor[0]); i++)
+	float temp = value1;
+	value1 = value2;
+	value2 = temp;
+}
+
+/** Функция которая загружает данные пиксилей в ZBuffer
+*/
+void Rasterization()
+{
+	for (int i = 0; i < sizeof(Transform.Poligon) / sizeof(Transform.Poligon[0]); i++)
 	{
-		for (int j = 0; j < sizeof(Transform.ZBufferColor[0]) / sizeof(Transform.ZBufferColor[0][0]); j++)
+		InitPointTriangle(i);
+		FindColor(Transform.Poligon[i][3]);
+
+		// Сортируем вершины по Y
+		float vertices[3][3] = {
+			{Transform.AX, Transform.AY, Transform.AZ},
+			{Transform.BX, Transform.BY, Transform.BZ},
+			{Transform.CX, Transform.CY, Transform.CZ}
+		};
+
+		for (int i = 0; i < sizeof(vertices) / sizeof(vertices[0]) - 1; i++)
 		{
-			if (Transform.ZBufferColor[i][j] != 0)
+			for (int j = sizeof(vertices) / sizeof(vertices[0]) - 1; j > i; j--)
 			{
-				/*FindColor(Transform.ZBufferColor[i][j]);
-				SetPixel(window.contx, i, j, RGB(Transform.Color[0][0], Transform.Color[0][1], Transform.Color[0][2]));*/
+				if (vertices[j - 1][1] > vertices[j][1])
+				{
+					Swap(vertices[j - 1][0], vertices[j][0]);
+					Swap(vertices[j - 1][1], vertices[j][1]);
+					Swap(vertices[j - 1][2], vertices[j][2]);
+				}
+			}
+		}
+
+
+
+		int x1;
+		int x2;
+		if (vertices[0][1] != vertices[2][1])
+		{
+			for (int y = vertices[0][1]; y <= vertices[2][1]; y++)
+			{
+						x1 = vertices[0][0] + (y - vertices[0][1]) * (vertices[2][0] - vertices[0][0]) / (vertices[2][1] - vertices[0][1]);
+					if (y < (int)vertices[1][1])
+					   {
+					   x2 = vertices[0][0] + (y - vertices[0][1]) * (vertices[1][0] - vertices[0][0]) / (vertices[1][1] - vertices[0][1]);
+					   }
+					else
+					{
+						if ((int)vertices[2][1] == (int)vertices[1][1])
+							x2 = vertices[1][0];
+						else
+							x2 = vertices[1][0] + (y - vertices[1][1]) * (vertices[2][0] - vertices[1][0]) / (vertices[2][1] - vertices[1][1]);
+					}
+				if (x1 > x2)
+					Swap(x1, x2);
+
+				for (int x = x1; x <= x2; x++) 
+					DrawTriangle(x, y);
 			}
 		}
 	}
@@ -662,20 +586,37 @@ void InitApp()
 	SelectObject(window.contx, CreateCompatibleBitmap(window.dev_cont, window.width, window.height));
 }
 
+void Information(float valueX,float valueY, float valueZ)
+{
+	//SetBkMode(window.context, TRANSPARENT); //аааааааааааа
+	auto hFont = CreateFont(30, 0, 0, 0, FW_BOLD, 0, 0, 0, 0, 0, 0, 2, 0, "CALIBRI"); //ааааа
+	auto hTmp = (HFONT)SelectObject(window.contx, hFont);
+
+	char txt[32];
+	SetTextColor(window.contx, RGB(255, 0, 0));
+	_itoa_s(valueX, txt, 10); // аа аааа ааааааааа аааааа
+	TextOutA(window.contx, window.width - 500, window.height - 1000, (LPCSTR)txt, strlen(txt));// аааа ааааа аааааа
+
+	SetTextColor(window.contx, RGB(0, 255, 50));
+	_itoa_s(valueY, txt, 10); // аа аааа ааааааааа аааааа
+	TextOutA(window.contx, window.width - 450, window.height - 1000, (LPCSTR)txt, strlen(txt));// аааа ааааа аааааа
+
+	SetTextColor(window.contx, RGB(0, 0, 255));
+	_itoa_s(valueZ, txt, 10); // аа аааа ааааааааа аааааа
+	TextOutA(window.contx, window.width - 400, window.height - 1000, (LPCSTR)txt, strlen(txt));// аааа ааааа аааааа
+}
 /** Обновление приложения
 */
 void UpdateApp()
 {
 	ClearVertexBuffer();
 	ClearZBuffer();
-	int tic = Transform.timer;
-	InitAngleTransform(30, tic, 0); /// поворот за тик
-	InitCameraPercpective(400);   /// перспектива  
-	/*Render();*/
+	InitAngleTransform(Transform.asiy, Transform.asix, Transform.tangag); /// поворот за тик
+	InitCameraPercpective(4);   /// перспектива  
 	DrawSquare(100, false);
+	Information(Transform.AX, Transform.AY, Transform.AZ);
 
-	SetZBuffer();
-
+	Rasterization();
 
 }
 
@@ -689,6 +630,32 @@ void UpdateKeyCode()
 	{
 		window.msg.message = WM_QUIT;
 	}
+
+	// управление кубом
+	if (GetAsyncKeyState(VK_LEFT))
+	{
+		Transform.asix += 5;
+	}
+	if (GetAsyncKeyState(VK_RIGHT))
+	{
+		Transform.asix -= 5;
+	}
+	if (GetAsyncKeyState(VK_UP))
+	{
+		Transform.asiy -= 5;
+	}
+	if (GetAsyncKeyState(VK_DOWN))
+	{
+		Transform.asiy += 5;
+	}
+	if (GetAsyncKeyState(0x51))
+	{
+		Transform.tangag -= 1;
+	}
+	if (GetAsyncKeyState(0x45))
+	{
+		Transform.tangag += 1;
+	}
 }
 
 /** обновление изображений
@@ -699,6 +666,7 @@ void UpdateImage()
 	//отрисовка заднего фона
 	ShowBitmap(window.contx, 0, 0, window.width, window.height, (HBITMAP)LoadImageA(NULL, "back.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE));
 }
+
 
 /** вход в программу
 */
@@ -732,8 +700,6 @@ int CALLBACK WinMain(
 		UpdateImage();
 		UpdateApp();
 
-
-		Transform.timer += 2;
 
 		/// задержка обновления
 		Sleep(16);
