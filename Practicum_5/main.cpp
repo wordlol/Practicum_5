@@ -33,7 +33,7 @@ struct
 	float angleX, angleY, angleZ;
 	int sizeSquare;
 	int BoxLeftX, BoxLeftY, BoxRightX, BoxRightY, BoxLeftZ, BoxRightZ;
-	float AX, AY, BX, BY, CX, CY, AZ, BZ, CZ;
+	int AX, AY, BX, BY, CX, CY, AZ, BZ, CZ;
 	int cameraDist;
 	int timer;
 	int DefultVertexBuffer[8][3] =
@@ -120,27 +120,27 @@ struct
 	{
 		//front //red
 		{1,2,3 ,1},
-		{1,3,4 ,1},
+		{1,4,3 ,1},
 
 		//back //green
 		{5,6,7 ,2},
-		{5,7,8 ,2},
+		{5,8,7 ,2},
 
 		//left //blue
 		{1,5,6 ,3},
-		{1,6,2 ,3},
+		{1,2,6 ,3},
 
 		//right //red green
 		{4,8,7 ,4},
-		{4,7,3 ,4},
+		{4,3,7 ,4},
 
 		//top //red blue
 		{2,6,7 ,5},
-		{2,7,3 ,5},
+		{2,3,7 ,5},
 
 		//bottom //green blue
 		{1,5,8 ,6},
-		{1,8,4 ,6},
+		{1,4,8 ,6},
 	};
 
 	/// массив цветов
@@ -317,6 +317,13 @@ void InitCameraPercpective(float cameraDist)
 	}
 }
 
+void Swap(int& value1, int& value2)
+{
+	int temp = value1;
+	value1 = value2;
+	value2 = temp;
+};
+
 /** Получаем данные полигона
 */
 void InitPointTriangle(int NumPoligon)
@@ -324,16 +331,20 @@ void InitPointTriangle(int NumPoligon)
 	Transform.AX = Transform.Vertex[Transform.Poligon[NumPoligon][0] - 1][0] * (Transform.sizeSquare / 2) + Transform.CenterX;
 	Transform.AY = Transform.Vertex[Transform.Poligon[NumPoligon][0] - 1][1] * (Transform.sizeSquare / 2) + Transform.CenterY;
 	Transform.AZ = Transform.Vertex[Transform.Poligon[NumPoligon][0] - 1][2] * (Transform.sizeSquare / 2) + Transform.cameraDist;
-
+	
 	Transform.BX = Transform.Vertex[Transform.Poligon[NumPoligon][1] - 1][0] * (Transform.sizeSquare / 2) + Transform.CenterX;
 	Transform.BY = Transform.Vertex[Transform.Poligon[NumPoligon][1] - 1][1] * (Transform.sizeSquare / 2) + Transform.CenterY;
 	Transform.BZ = Transform.Vertex[Transform.Poligon[NumPoligon][1] - 1][2] * (Transform.sizeSquare / 2) + Transform.cameraDist;
-
+	
 	Transform.CX = Transform.Vertex[Transform.Poligon[NumPoligon][2] - 1][0] * (Transform.sizeSquare / 2) + Transform.CenterX;
 	Transform.CY = Transform.Vertex[Transform.Poligon[NumPoligon][2] - 1][1] * (Transform.sizeSquare / 2) + Transform.CenterY;
-	Transform.CZ = Transform.Vertex[Transform.Poligon[NumPoligon][1] - 1][2] * (Transform.sizeSquare / 2) + Transform.cameraDist;
-}
+	Transform.CZ = Transform.Vertex[Transform.Poligon[NumPoligon][2] - 1][2] * (Transform.sizeSquare / 2) + Transform.cameraDist;
 
+	if (Transform.AY > Transform.BY)
+		Swap(Transform.AY, Transform.BY);
+	if (Transform.BY > Transform.CY)
+		Swap(Transform.CY, Transform.BY);
+}
 
 /** Функция отрисвоки линии на экране окна по Брезенхэйму
 */
@@ -524,10 +535,46 @@ void SetZBuffer()
 {
 	for (int i = 0; i < sizeof(Transform.Poligon) / sizeof(Transform.Poligon[0]); i++)
 	{
+		/*FindBoundBox();*/
 		InitPointTriangle(i);
-		FindBoundBox();
+		FindColor(Transform.Poligon[i][3]);
 
-		for (int y = Transform.BoxLeftY; y < Transform.BoxRightY; y++)
+		Transform.AY;
+		Transform.BY;
+		Transform.CY;
+
+		int x1 = 0;
+		int x2 = 0;
+		int tmp = 0;
+		int a1 = Transform.AY;
+		int a2 = Transform.CY;
+		if (Transform.AY != Transform.CY)
+		{
+		/// по этому условию нужно понять перевернулся ли куб или нет и менять стороны местами добавить переменную которая будет определять сейчас куб перевернут или нет
+
+		for (int y = Transform.AY; y <= Transform.CY; y++) {
+;
+				x1 = Transform.AX + (y - Transform.AY) * (Transform.CX - Transform.AX) / (Transform.CY - Transform.AY);
+			if (y < Transform.BY && y != Transform.BY)
+				x2 = Transform.AX + (y - Transform.AY) * (Transform.BX - Transform.AX) / (Transform.BY - Transform.AY);
+			else
+			{
+				if ((int)Transform.CY == (int)Transform.BY)
+					x2 = Transform.BX;
+				else
+					x2 = Transform.BX + (y - Transform.BY) * (Transform.CX - Transform.BX) / (Transform.CY - Transform.BY);
+			}
+			if (x1 > x2) { tmp = x1; x1 = x2; x2 = tmp; }
+
+			for (int x = x1; x < x2; x++)
+			{
+				SetPixel(window.contx, x, y, RGB(Transform.Color[0][0], Transform.Color[0][1], Transform.Color[0][2]));
+			}
+		}
+		}
+
+
+		/*for (int y = Transform.BoxLeftY; y < Transform.BoxRightY; y++)
 		{
 			for (int x = Transform.BoxLeftX; x < Transform.BoxRightX; x++)
 			{
@@ -541,11 +588,11 @@ void SetZBuffer()
 					}
 				}
 			}
-		}
+		}*/
 	}
 }
 
-/** отрисовывает изображения из ZBufferColor
+/** отрисовывает изображения из ZBufferColor *******************
 */
 void Render()
 {
@@ -555,8 +602,8 @@ void Render()
 		{
 			if (Transform.ZBufferColor[i][j] != 0)
 			{
-				FindColor(Transform.ZBufferColor[i][j]);
-				SetPixel(window.contx, i, j, RGB(Transform.Color[0][0], Transform.Color[0][1], Transform.Color[0][2]));
+				/*FindColor(Transform.ZBufferColor[i][j]);
+				SetPixel(window.contx, i, j, RGB(Transform.Color[0][0], Transform.Color[0][1], Transform.Color[0][2]));*/
 			}
 		}
 	}
@@ -602,15 +649,17 @@ void InitApp()
 */
 void UpdateApp()
 {
-	int tic = Transform.timer;
-	InitAngleTransform(-35, tic, 0); /// поворот за тик
-	InitCameraPercpective(-4);   /// перспектива  
-	SetZBuffer();
-	Render();
-	DrawSquare(100, false);
-
 	ClearVertexBuffer();
-	ClearZBuffer();
+	int tic = Transform.timer;
+	InitAngleTransform(tic, tic, 0); /// поворот за тик
+	/*InitCameraPercpective(40);   /// перспектива  */
+	/*Render();*/
+	DrawSquare(100, true);
+
+	SetZBuffer();
+
+
+	//ClearZBuffer();
 }
 
 
