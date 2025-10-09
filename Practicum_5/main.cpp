@@ -626,7 +626,7 @@ void UpdateApp()
 	ClearVertexBuffer();
 	ClearZBuffer();
 	InitAngleTransform(Transform.asiy, Transform.asix, Transform.tangag); /// поворот за тик
-	InitCameraPercpective(40);   /// перспектива  
+	InitCameraPercpective(4);   /// перспектива  
 	Rasterization();
 	DrawSquare(100, false);
 
