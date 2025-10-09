@@ -152,7 +152,7 @@ struct
 	};
 
 	/// zBuffer для всего окна
-	int ZBuffer[3000][3000];
+	float ZBuffer[3000][3000];
 
 } Transform;
 
@@ -449,80 +449,35 @@ void InitPointTriangle(int NumPoligon)
 	Transform.CZ = Transform.Vertex[Transform.Poligon[NumPoligon][2] - 1][2] * (Transform.sizeSquare / 2) + Transform.cameraDist;
 }
 
-
-
 /** Интерполяция Z координаты (билинейная)
 */
-float FindZPoint3(float x1, float x2, float x3, float y1, float y2, float y3, float z1, float z2, float z3, float x, float y)
+float FindZPoint(float vertices[3][3], float x, float y)
 {
-		float denom = (y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3);
+		float x1 = vertices[0][0], x2 = vertices[1][0], x3 = vertices[2][0];
+		float y1 = vertices[0][1], y2 = vertices[1][1], y3 = vertices[2][1];
+		float z1 = vertices[0][2], z2 = vertices[1][2], z3 = vertices[2][2];
 
-		float   w1 = ((y2 - y3) * (x - x3) + (x3 - x2) * (y - y3)) / denom;
-		float 	w2 = ((y3 - y1) * (x - x3) + (x1 - x3) * (y - y3)) / denom;
-		float 	w3 = 1 - w1 - w2;
+		//барицентрические координаты
+		float bar = (y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3);
 
-		float z_target = w1 * z1 + w2 * z2 + w3 * z3;
+		float w1 = ((y2 - y3) * (x - x3) + (x3 - x2) * (y - y3)) / bar;
+		float w2 = ((y3 - y1) * (x - x3) + (x1 - x3) * (y - y3)) / bar;
+		float w3 = 1 - w1 - w2;
 
-		return z_target;
-}
+		/// интерполяция Z
+		float z = w1 * z1 + w2 * z2 + w3 * z3;
 
-
-/** Интерполяция Z координаты (построение плоскости)
-*/
-float FindZPoint2(float x1, float x2, float x3, float y1, float y2, float y3,float z1,float z2,float z3, float x, float y)
-{
-		float A = (y2 - y1) * (z3 - z1) - (z2 - z1) * (y3 - y1);
-		float B = (z2 - z1) * (x3 - x1) - (x2 - x1) * (z3 - z1);
-		float C = (x2 - x1) * (y3 - y1) - (y2 - y1) * (x3 - x1);
-		float D = -A * x1 - B * y1 - C * z1;
-
-	if (C != 0)
-	{
-		float z_target = (-A * x - B * y - D) / C;
-		return z_target;
-	}
-}
-
-/** Интерполяция Z координаты (барицентрические коофиценты)
-*/
-int FindZPoint1(int x, int y)
-{
-	// вектора 
-	float vecACy = Transform.AY - Transform.CY;
-
-	float vecACx = Transform.AX - Transform.CX;
-	float vecCAy = Transform.CY - Transform.AY;
-
-	float vecСBx = Transform.CX - Transform.BX;
-	float vecBCy = Transform.BY - Transform.CY;
-
-	int vx = x - Transform.CX;
-	int vy = y - Transform.CY;
-
-	// барицентрические коофиценты
-	float AlphaAC = (vecCAy * vx + vecACx * vy) / (vecBCy * vecACx + vecСBx * vecACy);
-	float BetaCB = (vecBCy * vx + vecСBx * vy) / (vecBCy * vecACx + vecСBx * vecACy);
-
-	// Интерполяция z с использованием барицентрических координат
-	int z = BetaCB * Transform.AZ + AlphaAC * Transform.BZ + (1.0 - BetaCB - AlphaAC) * Transform.CZ;
-	
-	return z;
+		/// проверка то то находится ли точка внутри триугольника
+		if (0 <= w1 <= 1 && 0 <= w2 <= 1 && 0 <= w3 <= 1)
+		return z;
 }
 
 /** Рисуем пиксели с учетом zbuffer
 */
-void DrawPixel(int x, int y)
+void DrawPixel(int x, int y, float z)
 {
 	if (x > 0 && y > 0 && x <= window.width && y <= window.height)
 	{
-		/*int z = FindZPoint(x, y);*/
-		int z = FindZPoint3(
-			Transform.AX, Transform.BX, Transform.CX, 
-			Transform.AY, Transform.BY, Transform.CY,
-			Transform.AZ, Transform.BZ, Transform.CZ,
-			x,
-			y);
-
 		if (z < Transform.ZBuffer[x][y]) {
 			Transform.ZBuffer[x][y] = z;
 			SetPixel(window.contx, x, y, RGB(Transform.Color[0][0], Transform.Color[0][1], Transform.Color[0][2]));
@@ -599,8 +554,12 @@ void Rasterization()
 
 				FindXinterpolation(vertices, y, x1, x2); /// ищем точки x1, x2
 
-				for (int x = x1; x <= x2; x++) 
-					DrawPixel(x, y); /// рисуем точку с учетом глибны (Zbuffer)
+				for (int x = x1; x <= x2; x++)
+				{
+					float z = FindZPoint(vertices,x,y);
+
+					DrawPixel(x, y, z); /// рисуем точку с учетом глибны (Zbuffer)
+				}
 			}
 		}
 	}
