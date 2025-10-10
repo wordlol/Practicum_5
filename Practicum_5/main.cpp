@@ -34,9 +34,7 @@ struct
 	int sizeSquare;
 	float AX, AY, BX, BY, CX, CY, AZ, BZ, CZ;
 	int cameraDist;
-	int asix   = 0;
-	int asiy   = 0;
-	int tangag = 0;
+	int asix   = 0, asiy   = 0, tangag = 0;
 
 	int DefultVertexBuffer[8][3] =
 	{
@@ -235,6 +233,15 @@ void ShowBitmap(HDC hDC, int x, int y, int x1, int y1, HBITMAP hBitmapBall)
 	DeleteDC(hMemDC);
 }
 
+/** загрузка модулей приложения
+*/
+void InitApp()
+{
+	//создание и иниализация контекста устройсва и девайс устройства
+	window.dev_cont = GetDC(window.hWnd);
+	window.contx = CreateCompatibleDC(window.dev_cont);
+	SelectObject(window.contx, CreateCompatibleBitmap(window.dev_cont, window.width, window.height));
+}
 
 
 /** Функция для загрузки данных для построения линии
@@ -457,9 +464,10 @@ float FindZPoint(float vertices[3][3], float x, float y)
 		float y1 = vertices[0][1], y2 = vertices[1][1], y3 = vertices[2][1];
 		float z1 = vertices[0][2], z2 = vertices[1][2], z3 = vertices[2][2];
 
-		//барицентрические координаты
+		/// барицентрические координаты
 		float bar = (y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3);
 
+		/// вычисляем коофиценты
 		float w1 = ((y2 - y3) * (x - x3) + (x3 - x2) * (y - y3)) / bar;
 		float w2 = ((y3 - y1) * (x - x3) + (x1 - x3) * (y - y3)) / bar;
 		float w3 = 1 - w1 - w2;
@@ -472,45 +480,43 @@ float FindZPoint(float vertices[3][3], float x, float y)
 		return z;
 }
 
+/** Поиск минимальных значений и максимальных
+*/
+float FindMaxValue3(float value1, float value2, float value3)
+{
+	float temp = max(value1, value2);
+	return max(temp, value3);
+}
+float FindMinValue3(float value1, float value2, float value3)
+{
+	float temp = min(value1, value2);
+	return min(temp, value3);
+}
+
 /** Рисуем пиксели с учетом zbuffer
 */
 void DrawPixel(int x, int y, float z)
 {
-	if (x > 0 && y > 0 && x <= window.width && y <= window.height)
-	{
 		if (z < Transform.ZBuffer[x][y]) {
-			Transform.ZBuffer[x][y] = z;
 
+			float maxX = FindMaxValue3(Transform.AX, Transform.BX, Transform.CX);
+			float minX = FindMinValue3(Transform.AX, Transform.BX, Transform.CX);
 
-			float temp = max(Transform.AX, Transform.BX);
-			float maxX = max(temp, Transform.CX);
+			float maxY = FindMaxValue3(Transform.AY, Transform.BY, Transform.CY);
+			float minY = FindMinValue3(Transform.AY, Transform.BY, Transform.CY);
 
-			temp = min(Transform.AX, Transform.BX);
-			float minX = min(temp, Transform.CX);
+			float maxZ = FindMaxValue3(Transform.AZ, Transform.BZ, Transform.CZ);
+			float minZ = FindMinValue3(Transform.AZ, Transform.BZ, Transform.CZ);
 
-
-			temp = max(Transform.AY, Transform.BY);
-			float maxY = max(temp, Transform.CY);
-
-			temp = min(Transform.AY, Transform.BY);
-			float minY = min(temp, Transform.CY);
-			
-
-			temp = max(Transform.AZ, Transform.BZ);
-			float maxZ = max(temp, Transform.CZ);
-
-			temp = min(Transform.AZ, Transform.BZ);
-			float minZ = min(temp, Transform.CZ);
-
-
-			if (x <= maxX  && x >= minX &&
-				y <= maxY  && y >= minY  &&
-				z <= maxZ  && z >= minZ)
+			/// проверка на то чтобы луч не вылетал за пределы триугольника
+			if (x <= maxX + 1 && x >= minX - 1 &&
+				y <= maxY + 1 && y >= minY - 1 &&
+				z <= maxZ + 1 && z >= minZ - 1)
 			{
+			Transform.ZBuffer[x][y] = z; /// запись z координаты в z буффер
 			SetPixel(window.contx, x, y, RGB(Transform.Color[0][0], Transform.Color[0][1], Transform.Color[0][2]));
 			}
 		}
-	}
 }
 
 /** Метод для замены переменных местами
@@ -526,10 +532,12 @@ void Swap(float& value1, float& value2)
 */
 void FindXinterpolation(float vertices[3][3], int y , float&x1,float &x2)
 {
-	x1 = vertices[0][0] + (y - vertices[0][1]) * (vertices[2][0] - vertices[0][0]) / (vertices[2][1] - vertices[0][1]);
+			/// интерполяция по левой стороне
+			x1 = vertices[0][0] + (y - vertices[0][1]) * (vertices[2][0] - vertices[0][0]) / (vertices[2][1] - vertices[0][1]);
 	if (y < (int)vertices[1][1])
 	{
-		x2 = vertices[0][0] + (y - vertices[0][1]) * (vertices[1][0] - vertices[0][0]) / (vertices[1][1] - vertices[0][1]);
+			/// интерполяция по правой стороне
+			x2 = vertices[0][0] + (y - vertices[0][1]) * (vertices[1][0] - vertices[0][0]) / (vertices[1][1] - vertices[0][1]);
 	}
 	else
 	{
@@ -549,8 +557,8 @@ void Rasterization()
 {
 	for (int i = 0; i < sizeof(Transform.Poligon) / sizeof(Transform.Poligon[0]); i++)
 	{
-		InitPointTriangle(i);
-		FindColor(Transform.Poligon[i][3]);
+		InitPointTriangle(i); /// вычисляем координаты полигона
+		FindColor(Transform.Poligon[i][3]); /// ищем подходящий цвет
 
 		// вершины
 		float vertices[3][3] = {
@@ -573,22 +581,17 @@ void Rasterization()
 			}
 		}
 
-		if (vertices[0][1] == vertices[2][1]) continue;
-
-	
 		float x1;
 		float x2;
 		if (vertices[0][1] != vertices[2][1])
 		{
 			for (int y = vertices[0][1]; y <= vertices[2][1]; y++)
 			{
-
 				FindXinterpolation(vertices, y, x1, x2); /// ищем точки x1, x2
 
 				for (float x = x1; x <= x2; x++)
 				{
-					float z = FindZPoint(vertices,x,y);
-					float f = x / (z + Transform.cameraDist);
+					float z = FindZPoint(vertices,x,y); /// ищем точку Z билинейной инетерполяцией
 
 					DrawPixel(x, y, z); /// рисуем точку с учетом глибны (Zbuffer)
 				}
@@ -598,7 +601,7 @@ void Rasterization()
 	}
 }
 
-/** очищает zbuffer и ZBufferColor до стандартный значений
+/** Очищает zbuffer и ZBufferColor до стандартный значений
 */
 void ClearZBuffer()
 {
@@ -611,7 +614,7 @@ void ClearZBuffer()
 	}
 }
 
-/** очищает Vertex buffer до стандартный значений
+/** Очищает Vertex buffer до стандартный значений
 */
 void ClearVertexBuffer()
 {
@@ -623,50 +626,22 @@ void ClearVertexBuffer()
 	}
 }
 
-/** загрузка модулей приложения
-*/
-void InitApp()
-{
-	//создание и иниализация контекста устройсва и девайс устройства
-	window.dev_cont = GetDC(window.hWnd);
-	window.contx = CreateCompatibleDC(window.dev_cont);
-	SelectObject(window.contx, CreateCompatibleBitmap(window.dev_cont, window.width, window.height));
-}
 
-void Information(float valueX,float valueY, float valueZ)
-{
-	//SetBkMode(window.context, TRANSPARENT); //аааааааааааа
-	auto hFont = CreateFont(30, 0, 0, 0, FW_BOLD, 0, 0, 0, 0, 0, 0, 2, 0, "CALIBRI"); //ааааа
-	auto hTmp = (HFONT)SelectObject(window.contx, hFont);
 
-	char txt[32];
-	SetTextColor(window.contx, RGB(255, 0, 0));
-	_itoa_s(valueX, txt, 10); // аа аааа ааааааааа аааааа
-	TextOutA(window.contx, window.width - 500, window.height - 1000, (LPCSTR)txt, strlen(txt));// аааа ааааа аааааа
-
-	SetTextColor(window.contx, RGB(0, 255, 50));
-	_itoa_s(valueY, txt, 10); // аа аааа ааааааааа аааааа
-	TextOutA(window.contx, window.width - 450, window.height - 1000, (LPCSTR)txt, strlen(txt));// аааа ааааа аааааа
-
-	SetTextColor(window.contx, RGB(0, 0, 255));
-	_itoa_s(Transform.tangag, txt, 10); // аа аааа ааааааааа аааааа
-	TextOutA(window.contx, window.width - 400, window.height - 1000, (LPCSTR)txt, strlen(txt));// аааа ааааа аааааа
-}
-/** Обновление приложения
+/** Цикл обновления приложения
 */
 void UpdateApp()
 {
+	/// очистка буферов
 	ClearVertexBuffer();
 	ClearZBuffer();
-	InitAngleTransform(Transform.asix, Transform.asiy, Transform.tangag); /// поворот за тик
+
+	InitAngleTransform(Transform.asiy, Transform.asix, Transform.tangag); /// повороты куба (Q) (E) (VK_LEFT) (VK_RIGHT) (VK_UP) (VK_DOWN)
 	InitCameraPercpective(4);   /// перспектива  
-	Rasterization();
-	DrawSquare(100, false);
-
-
-	Information(Transform.AX, Transform.AY, Transform.AZ);
-
+	Rasterization();		    /// заполение сторон куба одним цветом
+	DrawSquare(100, false);		/// отрисовка окантовки куба (true)
 }
+
 
 
 /** обработка команд устройств ввода
@@ -714,7 +689,6 @@ void UpdateImage()
 	//отрисовка заднего фона
 	ShowBitmap(window.contx, 0, 0, window.width, window.height, (HBITMAP)LoadImageA(NULL, "back.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE));
 }
-
 
 /** вход в программу
 */
