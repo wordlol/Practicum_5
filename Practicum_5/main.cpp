@@ -480,7 +480,35 @@ void DrawPixel(int x, int y, float z)
 	{
 		if (z < Transform.ZBuffer[x][y]) {
 			Transform.ZBuffer[x][y] = z;
+
+
+			float temp = max(Transform.AX, Transform.BX);
+			float maxX = max(temp, Transform.CX);
+
+			temp = min(Transform.AX, Transform.BX);
+			float minX = min(temp, Transform.CX);
+
+
+			temp = max(Transform.AY, Transform.BY);
+			float maxY = max(temp, Transform.CY);
+
+			temp = min(Transform.AY, Transform.BY);
+			float minY = min(temp, Transform.CY);
+			
+
+			temp = max(Transform.AZ, Transform.BZ);
+			float maxZ = max(temp, Transform.CZ);
+
+			temp = min(Transform.AZ, Transform.BZ);
+			float minZ = min(temp, Transform.CZ);
+
+
+			if (x <= maxX  && x >= minX &&
+				y <= maxY  && y >= minY  &&
+				z <= maxZ  && z >= minZ)
+			{
 			SetPixel(window.contx, x, y, RGB(Transform.Color[0][0], Transform.Color[0][1], Transform.Color[0][2]));
+			}
 		}
 	}
 }
@@ -496,7 +524,7 @@ void Swap(float& value1, float& value2)
 
 /** Алгоритм поиска точкек x1 и x2
 */
-void FindXinterpolation(float vertices[3][3], int y ,int &x1,int &x2)
+void FindXinterpolation(float vertices[3][3], int y , float&x1,float &x2)
 {
 	x1 = vertices[0][0] + (y - vertices[0][1]) * (vertices[2][0] - vertices[0][0]) / (vertices[2][1] - vertices[0][1]);
 	if (y < (int)vertices[1][1])
@@ -545,8 +573,11 @@ void Rasterization()
 			}
 		}
 
-		int x1;
-		int x2;
+		if (vertices[0][1] == vertices[2][1]) continue;
+
+	
+		float x1;
+		float x2;
 		if (vertices[0][1] != vertices[2][1])
 		{
 			for (int y = vertices[0][1]; y <= vertices[2][1]; y++)
@@ -554,14 +585,16 @@ void Rasterization()
 
 				FindXinterpolation(vertices, y, x1, x2); /// ищем точки x1, x2
 
-				for (int x = x1; x <= x2; x++)
+				for (float x = x1; x <= x2; x++)
 				{
 					float z = FindZPoint(vertices,x,y);
+					float f = x / (z + Transform.cameraDist);
 
 					DrawPixel(x, y, z); /// рисуем точку с учетом глибны (Zbuffer)
 				}
 			}
 		}
+		
 	}
 }
 
@@ -616,7 +649,7 @@ void Information(float valueX,float valueY, float valueZ)
 	TextOutA(window.contx, window.width - 450, window.height - 1000, (LPCSTR)txt, strlen(txt));// аааа ааааа аааааа
 
 	SetTextColor(window.contx, RGB(0, 0, 255));
-	_itoa_s(valueZ, txt, 10); // аа аааа ааааааааа аааааа
+	_itoa_s(Transform.tangag, txt, 10); // аа аааа ааааааааа аааааа
 	TextOutA(window.contx, window.width - 400, window.height - 1000, (LPCSTR)txt, strlen(txt));// аааа ааааа аааааа
 }
 /** Обновление приложения
@@ -625,7 +658,7 @@ void UpdateApp()
 {
 	ClearVertexBuffer();
 	ClearZBuffer();
-	InitAngleTransform(Transform.asiy, Transform.asix, Transform.tangag); /// поворот за тик
+	InitAngleTransform(Transform.asix, Transform.asiy, Transform.tangag); /// поворот за тик
 	InitCameraPercpective(4);   /// перспектива  
 	Rasterization();
 	DrawSquare(100, false);
