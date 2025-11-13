@@ -145,6 +145,7 @@ void DrawLine()
 	bool StatusX = false;
 	bool StatusY = false;
 
+
 	while (true)
 	{
 		SetPixel(window.contx, Transform.x0, Transform.y0, RGB(255, 0, 0)); /// отрисовки линии
