@@ -213,12 +213,13 @@ void InitAngleTransform(int angleX, int angleY, int angleZ)
 
 /** ‘ункци€ преобразует вертексы в перспективное пространство
 */
-void InitCameraPercpective(float cameraDist)
+void InitCameraPercpective(float focus, float distansCamera)
 {
 	for (int i = 0; i < sizeof(Transform.Vertex) / sizeof(Transform.Vertex[0]); i++)
 	{
-		Transform.Vertex[i][0] = Transform.Vertex[i][0] * cameraDist / (Transform.Vertex[i][2] + cameraDist);
-		Transform.Vertex[i][1] = Transform.Vertex[i][1] * cameraDist / (Transform.Vertex[i][2] + cameraDist);
+
+		Transform.Vertex[i][0] *= focus / (Transform.Vertex[i][2] + distansCamera);
+		Transform.Vertex[i][1] *= focus / (Transform.Vertex[i][2] + distansCamera);
 	}
 }
 
@@ -295,14 +296,14 @@ void InitApp()
 	SelectObject(window.contx, CreateCompatibleBitmap(window.dev_cont, window.width, window.height));
 
 	InitAngleTransform(0, 15, 0); /// базовый поворот
-	InitCameraPercpective(40); /// базова€ перспектива
+	InitCameraPercpective(50,50); /// базова€ перспектива
 }
 
 /** ќбновление приложени€
 */
 void UpdateApp()
 {
-	InitAngleTransform(0, 0, 0); /// поворот за тик (можно использовать без таймера)
+	InitAngleTransform(3, 3, 3); /// поворот за тик (можно использовать без таймера)
 	DrawSquare(500);
 }
 
