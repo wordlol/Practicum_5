@@ -203,8 +203,8 @@ void InitCameraPercpective(float focus, float distansCamera)
 	for (int i = 0; i < sizeof(Transform.Vertex) / sizeof(Transform.Vertex[0]); i++)
 	{
 
-		Transform.Vertex[i][0] =  Transform.Vertex[i][0] * (focus / (Transform.Vertex[i][2] + distansCamera));
-		Transform.Vertex[i][1] =  Transform.Vertex[i][1] * (focus / (Transform.Vertex[i][2] + distansCamera));
+		Transform.Vertex[i][0] *= focus / (Transform.Vertex[i][2] + distansCamera);
+		Transform.Vertex[i][1] *= focus / (Transform.Vertex[i][2] + distansCamera);
 	}
 }
 
