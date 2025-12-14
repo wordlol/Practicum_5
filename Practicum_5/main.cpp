@@ -312,16 +312,18 @@ void InitAngleTransform(int angleX, int angleY, int angleZ)
 
 /** Функция преобразует вертексы в перспективное пространство
 */
-void InitCameraPercpective(float cameraDist)
-{
-	Transform.cameraDist = cameraDist;
 
+void InitCameraPercpective(float focus, float distansCamera)
+{
+	Transform.cameraDist = distansCamera;
 	for (int i = 0; i < sizeof(Transform.Vertex) / sizeof(Transform.Vertex[0]); i++)
 	{
-		Transform.Vertex[i][0] *= Transform.cameraDist / (Transform.Vertex[i][2] + Transform.cameraDist);
-		Transform.Vertex[i][1] *= Transform.cameraDist / (Transform.Vertex[i][2] + Transform.cameraDist);
+
+		Transform.Vertex[i][0] *= focus / (Transform.Vertex[i][2] + distansCamera);
+		Transform.Vertex[i][1] *= focus / (Transform.Vertex[i][2] + distansCamera);
 	}
 }
+
 
 void Swap(int& value1, int& value2)
 {
@@ -637,7 +639,7 @@ void UpdateApp()
 	ClearZBuffer();
 
 	InitAngleTransform(Transform.asiy, Transform.asix, Transform.tangag); /// повороты куба (Q) (E) (VK_LEFT) (VK_RIGHT) (VK_UP) (VK_DOWN)
-	InitCameraPercpective(4);   /// перспектива  
+	InitCameraPercpective(5,5);   /// перспектива  
 	Rasterization();		    /// заполение сторон куба одним цветом
 	DrawSquare(100, false);		/// отрисовка окантовки куба (true)
 }
